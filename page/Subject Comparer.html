@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <link rel="stylesheet" href="shared.css" />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
+    <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <title>Subject Comparer</title>
+    <style>
+      /* ── 1. Container / panel ── */
+      .container { max-width: 1100px; }
+      .topbar { margin-bottom: 20px; }
+      .topbar-row { align-items: flex-start; }
+      .panel { padding: 16px; margin-bottom: 0; }
+      .panel-header { margin-bottom: 10px; }
+
+      /* ── 2. Form ── */
+      textarea { min-height: 120px; }
+      .form-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+      .form-row > div { flex: 1; min-width: 120px; }
+
+      /* ── 3. Table ── */
+      .table-wrap { max-height: calc(100vh - 200px); }
+      th, td { padding: 6px 10px; }
+      tbody tr { border-top: 1px solid var(--border); }
+      td { border-bottom: none; }
+
+      /* ── 4. Copy buttons ── */
+      .th-inner { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+      .copy-btns { display: inline-flex; gap: 2px; }
+      .copy-btn {
+        padding: 1px 5px; font-size: 0.625rem; line-height: 1; border-radius: 3px;
+        border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+        cursor: pointer; font-weight: 600; transition: all 0.15s;
+      }
+      .copy-btn:hover { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+
+      /* ── 9. Compare colors ── */
+      .cell-match { color: var(--green); }
+      .cell-diff { color: var(--red); font-weight: 600; background: rgba(239, 68, 68, 0.08); }
+      .cell-missing { color: var(--muted); font-style: italic; }
+      .cell-subject { font-weight: 600; }
+      .cell-only { color: var(--yellow); font-style: italic; }
+      .cell-text:hover { }
+      td { white-space: nowrap; }
+      .cell-inner { display: inline-flex; align-items: center; position: relative; }
+      .cell-text { overflow: hidden; text-overflow: ellipsis; min-width: 0; white-space: nowrap; }
+      .cell-actions {
+        visibility: hidden; gap: 3px; flex-shrink: 0;
+        position: absolute; left: 100%; top: 50%; transform: translateY(-50%);
+        margin-left: 6px; padding: 1px 4px; z-index: 1; white-space: nowrap;
+      }
+      .subj-action {
+        padding: 0 4px; font-size: 0.625rem; line-height: 1.4; border-radius: 3px;
+        border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+        cursor: pointer; flex-shrink: 0;
+      }
+      .subj-action:hover { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+      .subj-del:hover { background: var(--red); border-color: var(--red); }
+
+      /* ── 5. Class tags ── */
+      .class-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+      .class-tag {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 4px 10px; border-radius: 999px; font-size: 0.75rem;
+        font-weight: 500; background: rgba(59, 130, 246, 0.15);
+        color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+      .class-tag .tag-remove {
+        cursor: pointer; opacity: 0.6; font-size: 0.875rem; line-height: 1;
+      }
+      .class-tag .tag-remove:hover { opacity: 1; }
+
+      /* ── 6. Layout ── */
+      .main-grid { display: block; }
+      .left-col { margin-bottom: 32px; }
+      .right-col { min-height: 400px; }
+      @media (min-width: 900px) {
+        .main-grid { display: grid; grid-template-columns: 400px 1fr; gap: 20px; align-items: start; }
+        .left-col { margin-bottom: 0; }
+      }
+
+      @media (max-width: 480px) {
+        th, td { padding: 4px 6px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container view active">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Subject Comparer</h1>
+            <p class="subtitle">Bandingkan daftar subject antar kelas.</p>
+          </div>
+          <div class="topbar-actions">
+          <a href="../Tools Hub.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Home</a>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span id="theme-label">Mode Terang</span>
+          </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="main-grid">
+        <div class="left-col">
+          <!-- Input Panel -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <h2>Tambah Kelas</h2>
+                <p>Input manual atau paste block format (nama kelas + subject, dipisah blank line).</p>
+              </div>
+            </div>
+            <div class="form-row">
+              <div>
+                <label for="class-name">Nama Kelas</label>
+                <input type="text" id="class-name" placeholder="Contoh: 10A, 11B..." />
+              </div>
+            </div>
+            <label for="class-subjects">Subject (satu per baris)</label>
+            <textarea id="class-subjects" placeholder="10A	11B&#10;Mathematics	Physics&#10;English	Chemistry"></textarea>
+            <p class="hint">Paste langsung — baris 1 = nama kelas (tab), baris berikutnya = subject per kelas (tab).</p>
+            <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap">
+              <button class="btn-primary" id="btn-add-class">+ Tambah Kelas</button>
+              <button id="btn-clear">Bersihkan</button>
+            </div>
+
+            <!-- Class list -->
+            <div style="margin-top: 12px;">
+              <label>Kelas yang sudah ditambahkan:</label>
+              <div class="class-tags" id="class-tags"></div>
+            </div>
+
+            <!-- Actions -->
+            <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap">
+              <button class="btn-success" id="btn-compare">Bandingkan</button>
+              <button class="btn-danger" id="btn-reset">Reset Semua</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="right-col">
+          <!-- Compare Table -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <h2>Hasil Perbandingan</h2>
+                <p id="table-subtitle"></p>
+              </div>
+              <div class="btn-group">
+                <button id="btn-copy-all">Salin Semua</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead id="compare-thead"></thead>
+                <tbody id="compare-tbody"></tbody>
+              </table>
+            </div>
+            <div class="summary-row" id="summary-row"></div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="note">
+        <p>Catatan</p>
+        <ul>
+          <li><strong>Hijau:</strong> Subject sama di semua kelas.</li>
+          <li><strong>Merah:</strong> Subject berbeda nama antar kelas di baris yang sama.</li>
+          <li><strong>Kuning:</strong> Subject hanya ada di salah satu kelas.</li>
+          <li><strong>Auto-paste:</strong> Paste tab-separated ke textarea — baris 1 = nama kelas, baris berikutnya = subject per kelas.</li>
+          <li><strong>Edit/Hapus:</strong> Klik nama kelas di daftar untuk rename. Hover cell di tabel hasil untuk edit/hapus subject per kelas.</li>
+        </ul>
+      </footer>
+    </div>
+
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <script src="confirm.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        let classData = {}; // { className: [subject1, subject2, ...] }
+
+        /* ── Toast ── */
+        function showToast(msg, err) {
+          const c = document.getElementById("toast-container");
+          const t = document.createElement("div");
+          t.className = "toast" + (err ? " error" : "");
+          t.textContent = msg;
+          c.appendChild(t);
+          requestAnimationFrame(() => t.classList.add("show"));
+          setTimeout(() => {
+            t.classList.remove("show");
+            setTimeout(() => t.remove(), 220);
+          }, 2200);
+        }
+
+        /* ── Theme ── */
+        (function () {
+          const root = document.documentElement,
+            toggle = document.getElementById("theme-toggle"),
+            label = document.getElementById("theme-label"),
+            sun = toggle.querySelector(".icon-sun"),
+            moon = toggle.querySelector(".icon-moon");
+          function apply(theme) {
+            root.setAttribute("data-theme", theme);
+            if (theme === "light") {
+              sun.style.display = "none"; moon.style.display = "inline";
+              label.textContent = "Mode Gelap";
+            } else {
+              sun.style.display = "inline"; moon.style.display = "none";
+              label.textContent = "Mode Terang";
+            }
+            try { localStorage.setItem("theme", theme); } catch (e) {}
+          }
+          let s; try { s = localStorage.getItem("theme"); } catch (e) {}
+          apply(s || "dark");
+          toggle.addEventListener("click", () => {
+            toggle.classList.remove("is-switching"); void toggle.offsetWidth;
+            toggle.classList.add("is-switching");
+            apply(root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+            toggle.blur();
+          });
+        })();
+
+        /* ── Render class tags ── */
+        function renderTags() {
+          const tags = document.getElementById("class-tags");
+          const names = Object.keys(classData);
+          if (names.length === 0) {
+            tags.innerHTML = '<span style="font-size:0.75rem;color:var(--muted)">Belum ada kelas</span>';
+            return;
+          }
+          tags.innerHTML = names.map(n =>
+            `<span class="class-tag"><span class="tag-edit" data-edit="${esc(n)}" title="Edit nama kelas">${esc(n)}</span> (${classData[n].length}) <span class="tag-remove" data-del="${esc(n)}">&times;</span></span>`
+          ).join("");
+          // Hapus
+          tags.querySelectorAll(".tag-remove").forEach(el => {
+            el.addEventListener("click", () => {
+              delete classData[el.dataset.del];
+              renderTags();
+            });
+          });
+          // Edit
+          tags.querySelectorAll(".tag-edit").forEach(el => {
+            el.addEventListener("click", async () => {
+              const oldName = el.dataset.edit;
+              const newName = await showPrompt("Rename kelas:", oldName);
+              if (!newName || newName.trim() === "" || newName.trim() === oldName) return;
+              const subjects = classData[oldName];
+              delete classData[oldName];
+              classData[newName.trim()] = subjects;
+              renderTags();
+              showToast(oldName + " → " + newName.trim());
+            });
+          });
+        }
+
+        /* ── Add class ── */
+        document.getElementById("btn-add-class").addEventListener("click", addClass);
+        document.getElementById("class-name").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); addClass(); }
+        });
+
+        function addClass() {
+          const name = document.getElementById("class-name").value.trim();
+          const text = document.getElementById("class-subjects").value.trim();
+          if (!text) { showToast("Subject harus diisi", true); return; }
+
+          // Coba auto-parse dulu (tab-separated, multi kelas)
+          if (!name) {
+            const count = parseAuto(text);
+            if (count > 0) {
+              document.getElementById("class-name").value = "";
+              document.getElementById("class-subjects").value = "";
+              showToast(count + " kelas otomatis terdeteksi");
+              return;
+            }
+            // Single class — prompt nama kelas
+            const className = await showPrompt("Nama kelas:");
+            if (!className || !className.trim()) return;
+            const subjects = text.split("\n").map(s => s.trim()).filter(Boolean);
+            if (subjects.length === 0) { showToast("Tidak ada subject", true); return; }
+            classData[className.trim()] = subjects;
+            document.getElementById("class-name").value = "";
+            document.getElementById("class-subjects").value = "";
+            renderTags();
+            showToast(className.trim() + " ditambahkan (" + subjects.length + " subject)");
+            return;
+          }
+
+          // Manual: name sudah diisi, textarea hanya berisi subject
+          const subjects = text.split("\n").map(s => s.trim()).filter(Boolean);
+          if (subjects.length === 0) { showToast("Tidak ada subject", true); return; }
+          classData[name] = subjects;
+          document.getElementById("class-name").value = "";
+          document.getElementById("class-subjects").value = "";
+          renderTags();
+          showToast(name + " ditambahkan (" + subjects.length + " subject)");
+        }
+
+        /* ── Auto-parse from textarea (tab-separated) ── */
+        function parseAuto(text) {
+          const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+          if (lines.length === 0) return 0;
+
+          // Tab-separated: baris pertama = nama kelas, baris berikutnya = subject per kelas
+          if (lines[0].includes("\t")) {
+            const cols = lines[0].split("\t").map(s => s.trim()).filter(Boolean);
+            if (cols.length < 1) return 0;
+
+            for (let c = 0; c < cols.length; c++) {
+              const subjects = [];
+              for (let r = 1; r < lines.length; r++) {
+                if (!lines[r].includes("\t")) continue;
+                const parts = lines[r].split("\t");
+                const val = (parts[c] || "").trim();
+                if (val) subjects.push(val);
+              }
+              if (subjects.length > 0) classData[cols[c]] = subjects;
+            }
+            renderTags();
+            return cols.length;
+          }
+
+          // Single-class: baris pertama = nama kelas, baris berikutnya = subjects
+          if (lines.length >= 2) {
+            const className = lines[0];
+            const subjects = lines.slice(1).map(l => l.includes("\t") ? l.split("\t").pop().trim() : l.trim()).filter(Boolean);
+            if (subjects.length > 0) {
+              classData[className] = subjects;
+              renderTags();
+              return 1;
+            }
+          }
+          return 0;
+        }
+
+        /* ── Clear ── */
+        document.getElementById("btn-clear").addEventListener("click", () => {
+          document.getElementById("class-name").value = "";
+          document.getElementById("class-subjects").value = "";
+        });
+
+        /* ── Reset ── */
+        document.getElementById("btn-reset").addEventListener("click", async () => {
+          if (Object.keys(classData).length === 0) return;
+          if (!await showConfirm("Hapus semua kelas?")) return;
+          classData = {};
+          renderTags();
+          renderCompare([]);
+          showToast("Semua kelas dihapus");
+        });
+
+        /* ── Compare ── */
+        document.getElementById("btn-compare").addEventListener("click", () => {
+          const names = Object.keys(classData);
+          if (names.length < 2) { showToast("Minimal 2 kelas untuk dibandingkan", true); return; }
+          doCompare();
+        });
+
+        function doCompare() {
+          const names = Object.keys(classData);
+          // Collect all unique subjects (case-insensitive key, preserve original casing from first class)
+          const subjectMap = {}; // lowercase -> { original, classes: { className: originalCased } }
+          for (const name of names) {
+            for (const subj of classData[name]) {
+              const key = subj.toLowerCase();
+              if (!subjectMap[key]) subjectMap[key] = { original: subj, classes: {} };
+              subjectMap[key].classes[name] = subj;
+            }
+          }
+
+          // Sort subjects alphabetically
+          const sortedKeys = Object.keys(subjectMap).sort((a, b) =>
+            subjectMap[a].original.localeCompare(subjectMap[b].original)
+          );
+
+          const rows = sortedKeys.map(key => {
+            const entry = subjectMap[key];
+            const values = names.map(n => entry.classes[n] || null);
+            return { subject: entry.original, values };
+          });
+
+          renderCompare(names, rows);
+        }
+
+        function renderCompare(names, rows) {
+          if (!rows || rows.length === 0) {
+            document.getElementById("compare-thead").innerHTML = "";
+            document.getElementById("compare-tbody").innerHTML =
+              '<tr><td colspan="100" class="empty-state">Belum ada data. Tambahkan minimal 2 kelas.</td></tr>';
+            document.getElementById("table-subtitle").textContent = "";
+            document.getElementById("summary-row").innerHTML = "";
+            return;
+          }
+
+          // Header
+          const thtml = "<tr>" + names.map(n =>
+            '<th><div class="th-inner"><span>' + esc(n) + '</span><span class="copy-btns"><button class="copy-btn" data-copy-class="' + esc(n) + '" data-sep="|" title="Salin dengan |">|</button><button class="copy-btn" data-copy-class="' + esc(n) + '" data-sep="\\n" title="Salin per baris">↵</button><button class="copy-btn" data-edit-class="' + esc(n) + '" title="Rename kelas">✎</button><button class="copy-btn copy-btn-del" data-del-class="' + esc(n) + '" title="Hapus kelas">✕</button></span></div></th>'
+          ).join("") + "</tr>";
+          document.getElementById("compare-thead").innerHTML = thtml;
+          document.getElementById("compare-thead").querySelectorAll(".copy-btn").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+              e.stopPropagation();
+              // Copy
+              if (btn.dataset.copyClass) {
+                const cls = btn.dataset.copyClass;
+                const sep = btn.dataset.sep === "\\n" ? "\n" : "|";
+                const label = sep === "\n" ? "per baris" : "dengan |";
+                const subjects = classData[cls];
+                if (!subjects || !subjects.length) return;
+                navigator.clipboard.writeText(subjects.join(sep))
+                  .then(() => showToast(cls + ": " + subjects.length + " subject disalin (" + label + ")"))
+                  .catch(() => showToast("Gagal menyalin", true));
+              }
+              // Rename
+              if (btn.dataset.editClass) {
+                const oldName = btn.dataset.editClass;
+                const newName = await showPrompt("Rename kelas:", oldName);
+                if (!newName || newName.trim() === "" || newName.trim() === oldName) return;
+                const subjects = classData[oldName];
+                delete classData[oldName];
+                classData[newName.trim()] = subjects;
+                renderTags();
+                doCompare();
+                showToast(oldName + " → " + newName.trim());
+              }
+              // Delete
+              if (btn.dataset.delClass) {
+                const clsName = btn.dataset.delClass;
+                if (!await showConfirm("Hapus kelas \"" + clsName + "\"?")) return;
+                delete classData[clsName];
+                renderTags();
+                if (Object.keys(classData).length < 2) {
+                  renderCompare([]);
+                } else {
+                  doCompare();
+                }
+                showToast(clsName + " dihapus");
+              }
+            });
+          });
+
+          // Body
+          const bhtml = rows.map((row, ri) => {
+            const allSame = row.values.every(v => v !== null && v.toLowerCase() === row.subject.toLowerCase());
+            const hasMissing = row.values.some(v => v === null);
+            const allPresent = row.values.every(v => v !== null);
+            const allDifferent = allPresent && !allSame;
+
+            const cells = row.values.map((v, i) => {
+              let cls = "";
+              if (v === null) {
+                cls = "cell-missing";
+                v = "—";
+              } else if (allSame) {
+                cls = "cell-match";
+              } else if (hasMissing && v !== null) {
+                cls = "cell-only";
+              } else if (allDifferent) {
+                cls = "cell-diff";
+              } else {
+                cls = "cell-diff";
+              }
+              const clsName = names[i];
+              const hasVal = v !== "—";
+              const editBtn = hasVal ? '<button class="subj-action" data-edit-subj="' + ri + '" data-cls="' + esc(clsName) + '" title="Edit">✎</button>' : '';
+              const delBtn = hasVal ? '<button class="subj-action subj-del" data-del-subj="' + ri + '" data-cls="' + esc(clsName) + '" title="Hapus">✕</button>' : '';
+              return '<td class="' + cls + '"><div class="cell-inner"><span class="cell-text">' + esc(v) + '</span><span class="cell-actions">' + editBtn + delBtn + '</span></div></td>';
+            }).join("");
+
+            return "<tr>" + cells + "</tr>";
+          }).join("");
+          document.getElementById("compare-tbody").innerHTML = bhtml;
+
+          // Edit subject — rename di kelas itu saja
+          document.getElementById("compare-tbody").querySelectorAll("[data-edit-subj]").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              const ri = parseInt(btn.dataset.editSubj);
+              const cls = btn.dataset.cls;
+              const oldName = rows[ri].subject;
+              const cellText = rows[ri].values[Object.keys(classData).indexOf(cls)];
+              const newVal = await showPrompt("Rename subject di " + cls + ":", cellText || oldName);
+              if (!newVal || newVal.trim() === "" || newVal.trim() === (cellText || oldName)) return;
+              const subs = classData[cls];
+              if (!subs) return;
+              // find exact match dulu, baru fallback case-insensitive
+              let idx = subs.indexOf(cellText || oldName);
+              if (idx === -1) idx = subs.findIndex(s => s.toLowerCase() === oldName.toLowerCase());
+              if (idx !== -1) {
+                subs[idx] = newVal.trim();
+                doCompare();
+                showToast(cls + ": " + (cellText || oldName) + " → " + newVal.trim());
+              }
+            });
+          });
+
+          // Delete subject per kelas
+          document.getElementById("compare-tbody").querySelectorAll("[data-del-subj]").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              const ri = parseInt(btn.dataset.delSubj);
+              const cls = btn.dataset.cls;
+              const subjName = rows[ri].subject;
+              if (!await showConfirm("Hapus \"" + subjName + "\" dari " + cls + "?")) return;
+              const subs = classData[cls];
+              if (!subs) return;
+              classData[cls] = subs.filter(s => s.toLowerCase() !== subjName.toLowerCase());
+              doCompare();
+              showToast(cls + ": " + subjName + " dihapus");
+            });
+          });
+
+          // Hover actions — JS biar langsung hilang
+          document.getElementById("compare-tbody").querySelectorAll("td").forEach(td => {
+            const actions = td.querySelector(".cell-actions");
+            if (!actions) return;
+            td.addEventListener("mouseenter", () => { actions.style.visibility = "visible"; });
+            td.addEventListener("mouseleave", () => { actions.style.visibility = ""; });
+          });
+
+          document.getElementById("table-subtitle").textContent = rows.length + " subject unik";
+
+          // Summary
+          const matchCount = rows.filter(r => r.values.every(v => v !== null && v.toLowerCase() === r.subject.toLowerCase())).length;
+          const diffCount = rows.filter(r => {
+            const present = r.values.filter(v => v !== null);
+            return present.length > 1 && !present.every(v => v.toLowerCase() === r.subject.toLowerCase());
+          }).length;
+          const onlyCount = rows.filter(r => r.values.some(v => v === null)).length;
+
+          document.getElementById("summary-row").innerHTML = `
+            <div class="summary-item"><strong>${rows.length}</strong> Total</div>
+            <div class="summary-item" style="color:var(--green)"><strong>${matchCount}</strong> Match</div>
+            <div class="summary-item" style="color:var(--red)"><strong>${diffCount}</strong> Beda</div>
+            <div class="summary-item" style="color:var(--yellow)"><strong>${onlyCount}</strong> Hanya di 1 kelas</div>
+          `;
+        }
+
+        /* ── Copy all ── */
+        document.getElementById("btn-copy-all").addEventListener("click", () => {
+          const names = Object.keys(classData);
+          if (names.length < 2) { showToast("Tidak ada data untuk disalin", true); return; }
+          const rows = [];
+          // Header
+          rows.push(names.join("\t"));
+          // Find max length
+          const maxLen = Math.max(...names.map(n => classData[n].length));
+          for (let i = 0; i < maxLen; i++) {
+            const vals = names.map(n => classData[n][i] || "");
+            // Skip fully empty rows
+            if (vals.every(v => v === "")) continue;
+            rows.push(vals.join("\t"));
+          }
+          navigator.clipboard.writeText(rows.join("\n"))
+            .then(() => showToast(rows.length + " baris berhasil disalin"))
+            .catch(() => showToast("Gagal menyalin", true));
+        });
+
+        /* ── Helpers ── */
+        function esc(s) {
+          const d = document.createElement("div");
+          d.textContent = s;
+          return d.innerHTML;
+        }
+
+        /* ── Init ── */
+        renderTags();
+        renderCompare([]);
+      })();
+    </script>
+  </body>
+</html>

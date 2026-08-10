@@ -1,0 +1,1067 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="shared.css" />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
+    <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <title>Fix Name</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+      .container { max-width: 1100px; }
+      .topbar { margin-bottom: 20px; }
+      .topbar-row { align-items: flex-start; }
+
+      .panel {
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .panel-header {
+        margin-bottom: 12px;
+      }
+
+      textarea {
+        min-height: 180px;
+      }
+      .format-hint {
+        font-size: 0.6875rem;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 640px) {
+        .two-col {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .table-wrap {
+        max-height: 60vh;
+      }
+      th,
+      td {
+        padding: 8px 10px;
+      }
+
+      .match-input {
+        background: transparent;
+        border: none;
+        color: var(--fg);
+        font-size: 0.8125rem;
+        width: 100%;
+        outline: none;
+        padding: 4px 0;
+      }
+      .match-input:focus {
+        border-bottom: 1px solid var(--primary);
+      }
+
+      .suggest-btn {
+        display: inline-block;
+        padding: 0 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        cursor: pointer;
+        background: var(--bg);
+        color: var(--fg);
+        line-height: 1.8;
+        transition: all 0.15s;
+        margin: 2px;
+        border: 1px solid var(--border);
+      }
+      .suggest-btn:hover {
+        border-color: var(--primary);
+      }
+      .suggest-btn.active {
+        color: var(--green);
+      }
+      .import-mode-btn {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        cursor: pointer;
+        background: var(--bg);
+        color: var(--fg);
+        border: 1px solid var(--border);
+        transition: all 0.15s;
+      }
+      .import-mode-btn:hover {
+        border-color: var(--primary);
+      }
+      .import-mode-btn.active {
+        color: var(--green);
+        background: rgba(22, 163, 74, 0.15);
+      }
+      .suggest-btn mark.highlight {
+        background: var(--yellow);
+        color: #000;
+      }
+      .suggest-btn .pct {
+        font-weight: 700;
+        opacity: 0.85;
+      }
+      .suggest-btn.active .pct {
+        opacity: 1;
+      }
+      .suggest-btn.low-score {
+        color: var(--red);
+      }
+      .suggest-btn.low-score.active {
+        color: var(--red);
+      }
+      .suggest-btn.low-score.active .pct {
+        opacity: 1;
+      }
+      .suggest-btn,
+      .suggest-btn.strike-in,
+      .suggest-btn.strike-out {
+        position: relative;
+        overflow: hidden;
+      }
+      .suggest-btn::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        height: 1px;
+        background: currentColor;
+        width: 100%;
+        transform: scaleX(0);
+        transform-origin: left;
+      }
+      .suggest-btn.cleared-sugg {
+        opacity: 0.6;
+      }
+      .suggest-btn.cleared-sugg::after {
+        transform: scaleX(1);
+      }
+      .suggest-btn.strike-in::after {
+        transform: scaleX(0);
+        animation: strike-left 0.4s ease-out forwards;
+      }
+      .suggest-btn.strike-out::after {
+        animation: strike-right 0.4s ease-out forwards;
+      }
+      @keyframes strike-left {
+        from {
+          transform: scaleX(0);
+        }
+        to {
+          transform: scaleX(1);
+        }
+      }
+      @keyframes strike-right {
+        from {
+          transform: scaleX(1);
+        }
+        to {
+          transform: scaleX(0);
+        }
+      }
+      .suggest-toggle.cleared-sugg {
+        opacity: 0.5;
+      }
+      .suggest-toggle {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--muted);
+        transition: all 0.15s;
+        margin: 2px;
+      }
+      .suggest-toggle:hover {
+        background: var(--accent);
+        color: var(--fg);
+        border-color: var(--muted);
+      }
+      .suggest-extra {
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height 0.35s ease-in-out;
+      }
+      .suggest-extra.open {
+        max-height: 120px;
+      }
+      .suggest-wrap {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.6875rem;
+        font-weight: 500;
+      }
+      .status-match {
+        background: rgba(22, 163, 74, 0.15);
+        color: var(--green);
+      }
+      .status-nomatch {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--red);
+      }
+      .status-exact {
+        background: rgba(59, 130, 246, 0.15);
+        color: var(--primary);
+      }
+      .status-close {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--red);
+      }
+
+      #match-tbody tr {
+        background-image: linear-gradient(90deg, rgba(22, 163, 74, 0.12), rgba(22, 163, 74, 0.12));
+        background-repeat: no-repeat;
+        background-position: left;
+        background-size: 0% 100%;
+        transition: background-size 0.45s ease;
+      }
+      #match-tbody tr.row-highlight {
+        background-size: 100% 100%;
+      }
+      td.name-click {
+        cursor: pointer;
+      }
+
+      mark.highlight,
+      .highlight {
+        color: #000;
+        font-weight: 600;
+        background: var(--yellow);
+        padding: 0 1px;
+        border-radius: 0 !important;
+      }
+      .highlight.hl-round {
+        border-radius: 3px !important;
+        padding: 0 3px;
+      }
+      .highlight.hl-left {
+        border-radius: 3px 0 0 3px !important;
+        padding: 0 1px 0 3px;
+        margin-right: 1px;
+      }
+      .highlight.hl-right {
+        border-radius: 0 3px 3px 0 !important;
+        padding: 0 3px 0 1px;
+        margin-left: 1px;
+      }
+      .highlight.hl-square {
+        border-radius: 0 !important;
+        padding: 0 1px;
+        margin: 0 1px;
+      }
+      .search-bar {
+        margin-bottom: 12px;
+        display: flex;
+        gap: 8px;
+      }
+      .search-bar input {
+        flex: 1;
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--input);
+        color: var(--fg);
+        font-size: 0.8125rem;
+        outline: none;
+      }
+      .search-bar input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+      }
+      .drop-zone {
+        position: relative;
+      }
+      .drop-zone.dragover {
+        border-color: var(--green) !important;
+        background: rgba(22, 163, 74, 0.08);
+      }
+      .panel.dragover {
+        border-color: var(--green);
+        box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.3);
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+      .drop-zone::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 11px;
+        pointer-events: none;
+        border: 2px dashed var(--muted);
+        opacity: 0;
+        transition:
+          opacity 0.2s,
+          transform 0.2s;
+        transform: scale(0.97);
+      }
+      .drop-zone.dragover::after {
+        opacity: 1;
+        transform: scale(1);
+        border-color: var(--green);
+      }
+      .search-bar select {
+        width: auto;
+        padding: 8px 24px 8px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--input);
+        color: var(--fg);
+        font-size: 0.8125rem;
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 10px 6px;
+      }
+      .search-bar select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+      }
+      .summary-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 8px;
+        padding-top: 8px;
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+      .summary-row strong {
+        color: var(--fg);
+      }
+
+      .empty-msg {
+        text-align: center;
+        padding: 32px 16px;
+        color: var(--muted);
+        font-size: 0.875rem;
+      }
+      .collapsed {
+        display: none;
+      }
+      #input-toggle-icon {
+        display: inline-block;
+        transition: transform 0.2s;
+      }
+      .import-switch {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container view active">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Fix Name</h1>
+            <p class="subtitle">Match nama input dengan data referensi. Suggestion pakai fuzzy matching.</p>
+          </div>
+          <div class="topbar-actions">
+          <a href="../Tools Hub.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Home</a>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5" />
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+          <span id="theme-label">Mode Terang</span>
+        </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input + Import Panels -->
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <h2>1. Input Nama</h2>
+              <p>Paste nama, satu per baris.</p>
+            </div>
+            <div class="btn-group">
+              <button id="btn-clear">Bersihkan</button>
+            </div>
+          </div>
+          <textarea id="input-names" placeholder="Agus Hariono&#10;Siti Nurhaliza&#10;Budi Santoso&#10;Dewi Lestari"></textarea>
+          <p class="format-hint">Satu nama per baris. Baris kosong otomatis diabaikan.</p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header" style="margin-bottom: 0">
+            <div class="panel-title">
+              <h2>2. Import Data Referensi</h2>
+              <p>Import file Excel/CSV atau paste data langsung.</p>
+            </div>
+            <div class="btn-group">
+              <button class="import-mode-btn active" data-import-mode="file">Import File</button>
+              <button class="import-mode-btn" data-import-mode="paste">Paste Text</button>
+            </div>
+          </div>
+          <div id="import-body">
+            <div id="import-mode-paste" style="display: none">
+              <textarea id="import-textarea" placeholder="Nama&#9;Username&#10;Agus Hariono&#9;agus123&#10;Siti Nurhaliza&#9;siti456&#10;Budi Santoso&#9;budi789" style="min-height: 150px"></textarea>
+              <p class="format-hint">Paste data dengan tab sebagai pemisah kolom (Nama&#9;Username). Baris kosong diabaikan.</p>
+            </div>
+            <div id="import-mode-file">
+              <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display: none" />
+              <div id="import-info" class="format-hint" style="margin-top: 0; margin-bottom: 10px">Belum ada data. Import file Excel/CSV untuk memulai.</div>
+              <div id="import-dropzone" style="border: 2px dashed var(--border); border-radius: 8px; padding: 75px; text-align: center; font-size: 0.8rem; color: var(--muted); transition: all 0.2s; cursor: pointer">Tarik &amp; lepas atau klik untuk pilih file</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Match Panel -->
+      <div class="panel" id="match-panel" style="display: none">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h2>3. Hasil Match</h2>
+            <p id="match-subtitle"></p>
+          </div>
+          <div class="btn-group">
+            <button id="btn-match-all2" class="btn-primary">Re-Match</button>
+            <button id="btn-copy">Salin Semua</button>
+            <button id="btn-export" class="btn-success" disabled>Export Hasil</button>
+          </div>
+        </div>
+        <div class="search-bar">
+          <input type="text" id="search-input" placeholder="Cari nama input..." />
+          <select id="status-filter">
+            <option value="">Semua</option>
+            <option value="Exact">Exact</option>
+            <option value="Matched">Matched</option>
+            <option value="Close">Close</option>
+            <option value="Cleared">Cleared</option>
+            <option value="Belum">Belum</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 40px">No.</th>
+                <th style="width: 250px">Nama Input</th>
+                <th style="min-width: 250px">Suggestion</th>
+                <th style="width: 180px" class="th-username">Username</th>
+                <th style="width: 80px">Status</th>
+                <th style="width: 50px"></th>
+              </tr>
+            </thead>
+            <tbody id="match-tbody"></tbody>
+          </table>
+        </div>
+        <div class="summary-row" id="summary-row"></div>
+      </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        /* ──  Import mode switch  ── */
+        document.querySelectorAll("[data-import-mode]").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            document.querySelectorAll("[data-import-mode]").forEach((b) => b.classList.remove("active"));
+            this.classList.add("active");
+            const mode = this.dataset.importMode;
+            document.getElementById("import-mode-paste").style.display = mode === "paste" ? "" : "none";
+            document.getElementById("import-mode-file").style.display = mode === "file" ? "" : "none";
+          });
+        });
+
+        /* ──  Import textarea paste  ── */
+        document.getElementById("import-textarea").addEventListener("input", function () {
+          const lines = this.value
+            .split("\n")
+            .map((l) => l.trim())
+            .filter(Boolean);
+          if (!lines.length) return;
+
+          refData = [];
+          const seen = new Set();
+          for (const line of lines) {
+            const parts = line.split("\t");
+            const n = (parts[0] || "").trim();
+            const u = (parts[1] || "").trim();
+            if (!n || seen.has(n.toLowerCase())) continue;
+            seen.add(n.toLowerCase());
+            refData.push({
+              name: n,
+              cleanName: stripTitles(n).trim().toLowerCase(),
+              username: u,
+            });
+          }
+
+          if (refData.length) {
+            hasUsername = refData.some((r) => !!r.username);
+            document.getElementById("import-info").innerHTML = '<span style="color:var(--green)">' + refData.length + " data</span> dimuat dari <strong>paste</strong>";
+            showToast(refData.length + " data referensi dimuat");
+            if (inputNames.length) runMatch();
+          }
+        });
+
+        let inputNames = [];
+        let refData = []; // [{name, username}]
+        let matches = []; // [{input, matchedName, username, accepted, suggestions}]
+        let searchQuery = "";
+        let filterStatus = "";
+        let clearedFresh = new Set(); // indices that just got cleared (animate strikethrough)
+        let revertFresh = new Set(); // indices that just got reverted (animate un-strikethrough)
+        let highlightedRows = new Set(); // indices that are row-highlighted
+        let hasUsername = false;
+
+        /* ──  Toast    ── */
+        function showToast(msg, err) {
+          const c = document.getElementById("toast-container");
+          const t = document.createElement("div");
+          t.className = "toast" + (err ? " error" : "");
+          t.textContent = msg;
+          c.appendChild(t);
+          requestAnimationFrame(() => t.classList.add("show"));
+          setTimeout(() => {
+            t.classList.remove("show");
+            setTimeout(() => t.remove(), 220);
+          }, 2200);
+        }
+
+        /* ──  Theme    ── */
+        (function () {
+          const root = document.documentElement,
+            tgl = document.getElementById("theme-toggle"),
+            lbl = document.getElementById("theme-label");
+          const sun = tgl.querySelector(".icon-sun"),
+            moon = tgl.querySelector(".icon-moon");
+          let s;
+          try {
+            s = localStorage.getItem("theme");
+          } catch (e) {}
+          const theme = s || "dark";
+          applyTheme(theme);
+          tgl.addEventListener("click", () => {
+            tgl.classList.remove("is-switching");
+            void tgl.offsetWidth;
+            tgl.classList.add("is-switching");
+            const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+            applyTheme(next);
+            tgl.blur();
+          });
+          function applyTheme(t) {
+            root.setAttribute("data-theme", t);
+            try {
+              localStorage.setItem("theme", t);
+            } catch (e) {}
+            if (t === "light") {
+              sun.style.display = "none";
+              moon.style.display = "inline";
+              lbl.textContent = "Mode Gelap";
+            } else {
+              sun.style.display = "inline";
+              moon.style.display = "none";
+              lbl.textContent = "Mode Terang";
+            }
+          }
+        })();
+
+        /* ──  Damerau-Levenshtein (transposisi = 1)    ── */
+        function levenshtein(a, b) {
+          a = a.toLowerCase();
+          b = b.toLowerCase();
+          const m = a.length,
+            n = b.length;
+          if (m === 0) return n;
+          if (n === 0) return m;
+          const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+          for (let i = 0; i <= m; i++) dp[i][0] = i;
+          for (let j = 0; j <= n; j++) dp[0][j] = j;
+          for (let i = 1; i <= m; i++) {
+            for (let j = 1; j <= n; j++) {
+              const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+              dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+              if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+                dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + cost);
+              }
+            }
+          }
+          return dp[m][n];
+        }
+
+        /* ──  Strip academic titles / gelar    ── */
+        function stripTitles(name) {
+          return name.replace(/,\s*(S\.?P\.?d\.?|S\.?S\.?|S\.?E\.?|S\.?Kom\.?|M\.?Pd\.?|M\.?Si\.?|M\.?Kom\.?|Gr\.?|S\.?Ag\.?|S\.?Sos\.?|dr\.?|Sp\.?[A-Z]*\.?|M\.?Sc\.?|Ph\.?D\.?|M\.?Thr\.?A\.?|S\.?Th\.?|B\.?Ed\.?|M\.?Ed\.?|B\.?S\.?|M\.?A\.?)+/gi, "").trim();
+        }
+
+        /* ──  Tokenize name into sorted lowercase words    ── */
+        function tokenize(name) {
+          return stripTitles(name).toLowerCase().split(/\s+/).filter(Boolean).sort();
+        }
+
+        /* ──  Similarity score (0-1) — simpler, fairer    ── */
+        function similarity(inputClean, refClean) {
+          const aTokens = tokenize(inputClean);
+          const bTokens = tokenize(refClean);
+          if (aTokens.length === 0 && bTokens.length === 0) return 1;
+          if (aTokens.length === 0 || bTokens.length === 0) return 0;
+
+          let scoreSum = 0;
+          for (const at of aTokens) {
+            let best = 0;
+            for (const bt of bTokens) {
+              const maxLen = Math.max(at.length, bt.length);
+              const sim = maxLen === 0 ? 1 : 1 - levenshtein(at, bt) / maxLen;
+              if (sim > best) best = sim;
+              // Exact substring match is strong signal
+              if (at.length >= 2 && bt.includes(at)) best = Math.max(best, 0.92);
+            }
+            if (best === 1) best = 1; // exact match stays 1
+            scoreSum += best;
+          }
+          // Average per input token — how well each input word is represented
+          return scoreSum / aTokens.length;
+        }
+
+        /* ──  Find best matches    ── */
+        function findSuggestions(inputName, refList, topN) {
+          const cleaned = stripTitles(inputName).trim().toLowerCase();
+          const scored = refList.map((r) => ({
+            name: r.name,
+            username: r.username,
+            score: similarity(cleaned, r.cleanName),
+          }));
+          scored.sort((a, b) => b.score - a.score);
+          return scored.slice(0, topN || 5);
+        }
+
+        /* ──  Input names    ── */
+        document.getElementById("input-names").addEventListener("input", function () {
+          inputNames = this.value
+            .split("\n")
+            .map((l) => l.trim())
+            .filter(Boolean);
+          if (refData.length && inputNames.length) runMatch();
+        });
+
+        document.getElementById("btn-clear").addEventListener("click", () => {
+          document.getElementById("input-names").value = "";
+          inputNames = [];
+          matches = [];
+          document.getElementById("match-panel").style.display = "none";
+        });
+
+        /* ──  Import file    ── */
+        document.getElementById("import-dropzone").addEventListener("click", () => {
+          document.getElementById("file-input").click();
+        });
+
+        document.getElementById("file-input").addEventListener("change", function () {
+          if (this.files.length) importFile(this.files[0]);
+        });
+
+        function importFile(file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            try {
+              const wb = XLSX.read(e.target.result, { type: "array" });
+              const ws = wb.Sheets[wb.SheetNames[0]];
+              const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+              if (!rows.length) {
+                showToast("File kosong", true);
+                return;
+              }
+
+              const keys = Object.keys(rows[0]);
+              const nameKey = keys.find((k) => /full\s*name|^name$/i.test(k)) || keys[0];
+              const userKey = keys.find((k) => /username|user/i.test(k)) || keys.find((k) => /nip/i.test(k)) || null;
+
+              refData = [];
+              const seen = new Set();
+              for (const r of rows) {
+                const n = String(r[nameKey] || "").trim();
+                if (!n || seen.has(n.toLowerCase())) continue;
+                seen.add(n.toLowerCase());
+                refData.push({
+                  name: n,
+                  cleanName: stripTitles(n).trim().toLowerCase(),
+                  username: userKey ? String(r[userKey] || "").trim() : "",
+                });
+              }
+
+              hasUsername = refData.some((r) => !!r.username);
+              document.getElementById("import-info").innerHTML = '<span style="color:var(--green)">' + refData.length + " data</span> dimuat dari <strong>" + esc(file.name) + "</strong> " + "(kolom: <strong>" + esc(nameKey) + "</strong>" + (userKey ? " → <strong>" + esc(userKey) + "</strong>" : "") + ")";
+              document.getElementById("import-dropzone").innerHTML = '<span style="color:var(--green)">' + esc(file.name) + '</span> diload';
+
+              showToast(refData.length + " data referensi dimuat");
+
+              // Auto-match if input names already exist
+              if (inputNames.length) runMatch();
+            } catch (err) {
+              showToast("Gagal baca file: " + err.message, true);
+            }
+          };
+          reader.readAsArrayBuffer(file);
+        }
+
+        /* ──  Drag & Drop Import    ── */
+        document.addEventListener("dragover", (e) => e.preventDefault());
+        document.addEventListener("drop", (e) => e.preventDefault());
+        const dz = document.getElementById("import-dropzone");
+        ["dragenter", "dragover"].forEach(function (ev) {
+          dz.addEventListener(ev, function (e) {
+            e.preventDefault();
+            dz.parentElement.classList.add("dragover");
+          });
+        });
+        ["dragleave", "drop"].forEach(function (ev) {
+          dz.addEventListener(ev, function (e) {
+            e.preventDefault();
+            dz.parentElement.classList.remove("dragover");
+          });
+        });
+        dz.addEventListener("drop", function (e) {
+          e.preventDefault();
+          if (e.dataTransfer.files.length) importFile(e.dataTransfer.files[0]);
+        });
+
+        /* ──  Auto-match all    ── */
+        function runMatch() {
+          if (!inputNames.length || !refData.length) return;
+
+          matches = inputNames.map((name) => {
+            const suggestions = findSuggestions(name, refData, 3);
+            const best = suggestions[0];
+            // Always auto-accept the highest score match
+            return {
+              input: name,
+              matchedName: best ? best.name : "",
+              username: best ? best.username : "",
+              accepted: !!best,
+              suggestions: suggestions,
+            };
+          });
+
+          renderMatchTable();
+          showToast(matches.filter((m) => m.accepted).length + "/" + matches.length + " nama di-auto-match");
+        }
+        document.getElementById("btn-match-all2").addEventListener("click", runMatch);
+
+        /* ──  Search Input    ── */
+        document.getElementById("search-input").addEventListener("input", function () {
+          searchQuery = this.value;
+          renderMatchTable();
+        });
+        document.getElementById("status-filter").addEventListener("change", function () {
+          filterStatus = this.value;
+          renderMatchTable();
+        });
+
+        /* ──  Render match table    ── */
+        function renderMatchTable() {
+          const panel = document.getElementById("match-panel");
+          panel.style.display = "block";
+
+          // Toggle username column visibility
+          const thUsername = panel.querySelector(".th-username");
+          if (thUsername) thUsername.style.display = hasUsername ? "" : "none";
+
+          const tbody = document.getElementById("match-tbody");
+          tbody.innerHTML = matches
+            .map((m, i) => {
+              if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                const haystack = (m.input + " " + m.matchedName + (hasUsername ? " " + m.username : "")).toLowerCase();
+                if (!haystack.includes(q)) return "";
+              }
+              const bestScore = m.accepted && m.suggestions[0] ? m.suggestions[0].score : 0;
+              const statusCls = m.cleared ? "status-nomatch" : m.accepted ? (m.matchedName === m.input ? "status-exact" : bestScore < 0.5 ? "status-close" : "status-match") : "status-nomatch";
+              const statusTxt = m.cleared ? "Cleared" : m.accepted ? (m.matchedName === m.input ? "Exact" : bestScore < 0.5 ? "Close" : "Matched") : "Belum";
+              if (filterStatus && statusTxt !== filterStatus) return "";
+
+              // Suggestion buttons: show first + "..." toggle for rest
+              let suggHtml = "";
+              if (m.suggestions.length > 0) {
+                const first = m.suggestions[0];
+                const pct0 = Math.round(first.score * 100);
+                const isActive0 = m.accepted && m.matchedName === first.name;
+                suggHtml = '<div class="suggest-wrap">';
+                const strikeCls = revertFresh.has(i) ? " strike-out" : clearedFresh.has(i) ? " strike-in" : "";
+                const clearedCls0 = m.cleared || revertFresh.has(i) ? " cleared-sugg" : "";
+                const low0 = first.score < 0.5 ? " low-score" : "";
+                suggHtml += '<button class="suggest-btn' + (isActive0 ? " active" : "") + low0 + clearedCls0 + strikeCls + '" data-match-idx="' + i + '" data-ref-name="' + esc(first.name) + '" data-ref-user="' + esc(first.username) + '">' + highlightName(m.input, first.name) + ' <span class="pct">(' + pct0 + "%)</span></button>";
+                if (m.suggestions.length > 1) {
+                  suggHtml += '<button class="suggest-toggle' + (m.cleared ? " cleared-sugg" : "") + '" data-toggle-idx="' + i + '">...</button>';
+                  const extraHtml = m.suggestions
+                    .slice(1)
+                    .map((s) => {
+                      const pct = Math.round(s.score * 100);
+                      const isActive = m.accepted && m.matchedName === s.name;
+                      const low = s.score < 0.5 ? " low-score" : "";
+                      const clearedCls = m.cleared ? " cleared-sugg" : "";
+                      return '<button class="suggest-btn' + (isActive ? " active" : "") + low + clearedCls + '" data-match-idx="' + i + '" data-ref-name="' + esc(s.name) + '" data-ref-user="' + esc(s.username) + '">' + highlightName(m.input, s.name) + ' <span class="pct">(' + pct + "%)</span></button>";
+                    })
+                    .join("");
+                  suggHtml += '<span class="suggest-extra" data-extra-idx="' + i + '">' + extraHtml + "</span>";
+                }
+                suggHtml += "</div>";
+              }
+
+              return (
+                "<tr>" +
+                '<td style="width:40px">' +
+                (i + 1) +
+                ".</td>" +
+                '<td style="width:250px" class="name-click" data-name-idx="' +
+                i +
+                '"><strong>' +
+                esc(m.input) +
+                "</strong></td>" +
+                '<td style="min-width:250px">' +
+                (suggHtml || '<span style="color:var(--muted);font-size:0.75rem">-</span>') +
+                "</td>" +
+                (hasUsername ? '<td style="width:180px;color:var(--muted)">' + esc(m.username) + "</td>" : "") +
+                '<td style="width:80px"><span class="status-badge ' +
+                statusCls +
+                '">' +
+                statusTxt +
+                "</span></td>" +
+                "<td>" +
+                (m.cleared || revertFresh.has(i) ? '<button class="suggest-toggle" data-revert-idx="' + i + '" style="font-size:0.65rem;padding:2px 6px" title="Revert">↩</button>' : '<button class="suggest-toggle" data-clear-idx="' + i + '" style="font-size:0.65rem;padding:2px 6px" title="Clear">✕</button>') +
+                "</td>" +
+                "</tr>"
+              );
+            })
+            .join("");
+
+          // Suggestion button clicks
+          tbody.querySelectorAll(".suggest-btn").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const idx = parseInt(this.dataset.matchIdx);
+              const name = this.dataset.refName;
+              const user = this.dataset.refUser;
+              matches[idx].matchedName = name;
+              matches[idx].username = user;
+              matches[idx].accepted = true;
+              matches[idx].cleared = false;
+              // Move clicked suggestion to top
+              const sugg = matches[idx].suggestions;
+              const clickedIdx = sugg.findIndex((s) => s.name === name && s.username === user);
+              if (clickedIdx > 0) {
+                const [item] = sugg.splice(clickedIdx, 1);
+                sugg.unshift(item);
+              }
+              renderMatchTable();
+            });
+          });
+
+          // "..." toggle clicks
+          tbody.querySelectorAll(".suggest-toggle[data-toggle-idx]").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const idx = this.dataset.toggleIdx;
+              const extra = tbody.querySelector('.suggest-extra[data-extra-idx="' + idx + '"]');
+              if (extra) {
+                extra.classList.toggle("open");
+                this.style.background = extra.classList.contains("open") ? "var(--accent)" : "";
+              }
+            });
+          });
+
+          // Clear button clicks
+          tbody.querySelectorAll("[data-clear-idx]").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const idx = parseInt(this.dataset.clearIdx);
+              matches[idx].matchedName = "";
+              matches[idx].username = "";
+              matches[idx].accepted = false;
+              matches[idx].cleared = true;
+              clearedFresh.add(idx);
+              renderMatchTable();
+              setTimeout(() => {
+                clearedFresh.delete(idx);
+              }, 420);
+            });
+          });
+
+          // Revert button clicks
+          tbody.querySelectorAll("[data-revert-idx]").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const idx = parseInt(this.dataset.revertIdx);
+              const suggestions = findSuggestions(matches[idx].input, refData, 3);
+              const best = suggestions[0];
+              revertFresh.add(idx);
+              renderMatchTable();
+              setTimeout(() => {
+                matches[idx].suggestions = suggestions;
+                matches[idx].matchedName = best ? best.name : "";
+                matches[idx].username = best ? best.username : "";
+                matches[idx].accepted = !!best;
+                matches[idx].cleared = false;
+                revertFresh.delete(idx);
+                renderMatchTable();
+              }, 420);
+            });
+          });
+
+          // Restore highlight after innerHTML rebuild
+          tbody.querySelectorAll("tr").forEach((tr) => {
+            const nameEl = tr.querySelector("[data-name-idx]");
+            if (nameEl) {
+              const idx = parseInt(nameEl.dataset.nameIdx);
+              if (highlightedRows.has(idx)) tr.classList.add("row-highlight");
+            }
+          });
+
+          // Click name to highlight row
+          tbody.querySelectorAll("[data-name-idx]").forEach((td) => {
+            td.addEventListener("click", function () {
+              const idx = parseInt(this.dataset.nameIdx);
+              const tr = this.closest("tr");
+              if (highlightedRows.has(idx)) {
+                highlightedRows.delete(idx);
+                tr.classList.remove("row-highlight");
+              } else {
+                highlightedRows.add(idx);
+                tr.classList.add("row-highlight");
+              }
+            });
+          });
+
+          updateSummary();
+          document.getElementById("btn-export").disabled = !matches.length;
+          document.getElementById("btn-copy").disabled = !matches.length;
+        }
+
+        function updateRowStatus(idx) {
+          const tbody = document.getElementById("match-tbody");
+          const rows = tbody.querySelectorAll("tr");
+          if (!rows[idx]) return;
+          const m = matches[idx];
+          const bestScore = m.accepted && m.suggestions[0] ? m.suggestions[0].score : 0;
+          const badge = rows[idx].querySelector(".status-badge");
+          const statusCls = m.cleared ? "status-nomatch" : m.accepted ? (m.matchedName === m.input ? "status-exact" : bestScore < 0.5 ? "status-close" : "status-match") : "status-nomatch";
+          const statusTxt = m.cleared ? "Cleared" : m.accepted ? (m.matchedName === m.input ? "Exact" : bestScore < 0.5 ? "Close" : "Matched") : "Belum";
+          badge.className = "status-badge " + statusCls;
+          badge.textContent = statusTxt;
+          if (hasUsername) {
+            const tds = rows[idx].querySelectorAll("td");
+            tds[3].textContent = m.cleared ? "-" : m.username;
+          }
+          updateSummary();
+        }
+
+        function updateSummary() {
+          const total = matches.length;
+          const exact = matches.filter((m) => m.accepted && m.matchedName === m.input).length;
+          const fuzzy = matches.filter((m) => m.accepted && m.matchedName !== m.input && (m.suggestions[0] ? m.suggestions[0].score : 0) >= 0.5).length;
+          const close = matches.filter((m) => m.accepted && m.matchedName !== m.input && (m.suggestions[0] ? m.suggestions[0].score : 0) < 0.5).length;
+          const cleared = matches.filter((m) => m.cleared).length;
+          const unmatched = total - exact - fuzzy - close - cleared;
+          document.getElementById("match-subtitle").textContent = total + " nama";
+          document.getElementById("summary-row").innerHTML = "<div><strong>" + total + "</strong> Total</div>" + '<div style="color:var(--primary)"><strong>' + exact + "</strong> Exact</div>" + '<div style="color:var(--green)"><strong>' + fuzzy + "</strong> Fuzzy Match</div>" + '<div style="color:var(--red)"><strong>' + close + "</strong> Close</div>" + '<div style="color:var(--yellow)"><strong>' + cleared + "</strong> Cleared</div>" + '<div style="color:var(--red)"><strong>' + unmatched + "</strong> Belum</div>";
+        }
+
+        /* ──  Copy All (tab-separated: Nama, Username)    ── */
+        document.getElementById("btn-copy").addEventListener("click", () => {
+          if (!matches.length) return;
+          const lines = matches.map((m) => (m.cleared ? m.input : m.matchedName) + (hasUsername ? "\t" + (m.cleared ? "-" : m.username) : ""));
+          navigator.clipboard
+            .writeText(lines.join("\n"))
+            .then(() => {
+              showToast("Tersalin: " + matches.length + " baris (Nama" + (hasUsername ? "\tUsername" : "") + ")");
+            })
+            .catch(() => {
+              showToast("Gagal menyalin", true);
+            });
+        });
+
+        /* ──  Export    ── */
+        document.getElementById("btn-export").addEventListener("click", () => {
+          if (!matches.length) return;
+          const exportData = matches.map((m) => {
+            const row = {
+              "Nama Input": m.input,
+              "Nama di Data": m.matchedName,
+            };
+            if (hasUsername) row.Username = m.username;
+            row.Status = m.accepted ? (m.matchedName === m.input ? "Exact" : "Fuzzy") : "Belum";
+            return row;
+          });
+          const ws = XLSX.utils.json_to_sheet(exportData);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Fix Name");
+          XLSX.writeFile(wb, "Fix Name Hasil.xlsx");
+          showToast("File diunduh");
+        });
+
+        /* ──  Helpers    ── */
+        function esc(s) {
+          const d = document.createElement("div");
+          d.textContent = s;
+          return d.innerHTML;
+        }
+
+        function highlightName(input, name) {
+          if (!input || !name) return esc(name);
+          const a = input.replace(/\s+/g, " ").trim().toLowerCase();
+          const b = name;
+          // Longest common contiguous substring
+          let bestLen = 0,
+            bestJ = 0;
+          for (let i = 0; i < a.length; i++) {
+            for (let j = 0; j < b.length; j++) {
+              let k = 0;
+              while (i + k < a.length && j + k < b.length && a[i + k] === b[j + k].toLowerCase()) {
+                k++;
+              }
+              if (k > bestLen) {
+                bestLen = k;
+                bestJ = j;
+              }
+            }
+          }
+          if (bestLen < 2) return esc(name);
+          const match = b.substring(bestJ, bestJ + bestLen);
+          const escaped = esc(name);
+          // Detect word boundaries for border-radius
+          const charBefore = bestJ > 0 ? b[bestJ - 1] : " ";
+          const charAfter = bestJ + bestLen < b.length ? b[bestJ + bestLen] : " ";
+          const leftBound = charBefore === " ";
+          const rightBound = charAfter === " ";
+          let hlClass = "highlight";
+          if (leftBound && rightBound) hlClass += " hl-round";
+          else if (leftBound) hlClass += " hl-left";
+          else if (rightBound) hlClass += " hl-right";
+          else hlClass += " hl-square";
+          const re = new RegExp("(" + match.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi");
+          return escaped.replace(re, '<mark class="' + hlClass + '">$1</mark>');
+        }
+      })();
+    </script>
+  </body>
+</html>

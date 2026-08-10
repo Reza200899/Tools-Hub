@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="shared.css" />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
+    <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <title>Data Comparer</title>
+    <meta name="description" content="Bandingkan dua set data secara baris demi baris." />
+    <style>
+      .topbar-row { align-items: flex-start; }
+      .topbar { margin-bottom: 20px; }
+      /* Grid for Textareas */
+      .input-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 768px) {
+        .input-grid { grid-template-columns: 1fr; }
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .field-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .field label {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--muted);
+      }
+      textarea {
+        min-height: 140px;
+        padding: 10px;
+        white-space: pre;
+        overflow-wrap: normal;
+        overflow-x: auto;
+      }
+
+      /* Buttons */
+      .action-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      /* Search / Filter */
+      .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+        align-items: center;
+      }
+      select.filter-sel {
+        width: auto;
+        padding: 7px 32px 7px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: color-mix(in srgb, var(--bg) 92%, var(--fg));
+        color: var(--fg);
+        font-size: 0.875rem;
+        outline: none;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        cursor: pointer;
+      }
+      select.filter-sel:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent);
+      }
+
+      /* Table */
+      .table-wrap {
+        max-height: 500px;
+        margin: 0;
+      }
+      .col-check { width: 34px; text-align: center; }
+      .col-no { width: 40px; text-align: center; }
+      .col-id { width: 20%; min-width: 0; font-family: ui-monospace, SFMono-Regular, monospace; }
+      .col-data { width: 25%; min-width: 0; }
+      .col-res { width: 10%; min-width: 0; text-align: center; }
+
+      .badge {
+        border-radius: 4px;
+        text-transform: uppercase;
+      }
+      .badge-sama {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+      }
+      .badge-beda {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+      }
+
+      tbody tr.picked {
+        background: color-mix(in srgb, var(--primary) 16%, transparent);
+      }
+      tbody tr.picked:hover {
+        background: color-mix(in srgb, var(--primary) 22%, transparent);
+      }
+      .cell-clickable {
+        cursor: pointer;
+      }
+      input[type="checkbox"]:checked {
+        animation: cb-pop 0.2s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container view active">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Data Comparer</h1>
+            <p class="subtitle">Bandingkan 2 sumber data (paste dari Excel/TSV). Jika ID sama, baris sejajar.</p>
+          </div>
+          <div class="topbar-actions">
+          <a href="../Tools Hub.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Home</a>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span id="theme-label">Mode Terang</span>
+          </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title-row">
+          <h2>Input Data</h2>
+        </div>
+        <div class="input-grid">
+          <div class="field">
+            <div class="field-title">
+              <label for="input-1">Sumber 1 (Format: ID &lt;tab&gt; Data 1)</label>
+              <button class="btn-paste-source" data-target="input-1" type="button">Paste</button>
+            </div>
+            <textarea id="input-1" placeholder="Contoh:&#10;csrfmiddlewaretoken&#9;D1mZW8h3kNU1kt...&#10;page_order&#9;2"></textarea>
+          </div>
+          <div class="field">
+            <div class="field-title">
+              <label for="input-2">Sumber 2 (Format: ID Compare &lt;tab&gt; Data 2)</label>
+              <button class="btn-paste-source" data-target="input-2" type="button">Paste</button>
+            </div>
+            <textarea id="input-2" placeholder="Contoh:&#10;csrfmiddlewaretoken&#9;1ua5daCHEaQlR7...&#10;page_order&#9;2"></textarea>
+          </div>
+        </div>
+        <div class="action-row">
+          <button id="btn-compare" class="btn-primary">Bandingkan Data</button>
+          <button id="btn-clear-inputs">Bersihkan Input</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title-row">
+          <h2>Hasil Perbandingan</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button id="btn-copy-beda" class="btn-success">Salin yang Beda</button>
+            <button id="btn-copy-selected">Salin Pilih</button>
+            <button id="btn-csv">Download CSV</button>
+          </div>
+        </div>
+
+        <div class="filter-row">
+          <div class="search-wrap">
+            <input type="text" id="search-input" placeholder="Cari ID atau Data…" />
+            <button class="search-clear" id="search-clear" type="button" aria-label="Hapus pencarian">
+              <i class="fad fa-xmark"></i>
+            </button>
+          </div>
+          <select id="filter-status" class="filter-sel">
+            <option value="all">Semua Status</option>
+            <option value="beda">Hanya "Beda"</option>
+            <option value="sama">Hanya "Sama"</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-no">#</th>
+                <th class="col-id">ID</th>
+                <th class="col-data">Data 1</th>
+                <th class="col-check"><input type="checkbox" id="check-all" aria-label="Pilih semua"></th>
+                <th class="col-id">ID Compare</th>
+                <th class="col-data">Data 2</th>
+                <th class="col-res">Hasil</th>
+              </tr>
+            </thead>
+            <tbody id="tbody">
+              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Belum ada data. Paste data di atas lalu klik "Bandingkan Data".</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:8px;font-size:0.75rem;color:var(--muted)">
+          Tampil <span id="row-count">0</span> baris
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="theme.js"></script>
+    <script>
+    (function () {
+      // === Toast ===
+      function showToast(msg) {
+        const c = document.getElementById("toast-container");
+        const t = document.createElement("div");
+        t.className = "toast";
+        t.textContent = msg;
+        c.appendChild(t);
+        requestAnimationFrame(() => t.classList.add("show"));
+        setTimeout(() => {
+          t.classList.remove("show");
+          setTimeout(() => t.remove(), 220);
+        }, 2200);
+      }
+
+      // === Search clear with paper bits ===
+      const searchInput = document.getElementById("search-input");
+      const searchClear = document.getElementById("search-clear");
+      searchInput.addEventListener("input", () => {
+        searchClear.classList.toggle("visible", searchInput.value.length > 0);
+        render();
+      });
+      searchClear.addEventListener("click", () => {
+        const rect = searchInput.getBoundingClientRect();
+        const colors = ["var(--primary)","var(--muted)","var(--fg)","var(--border)"];
+        for (let i = 0; i < 14; i++) {
+          const bit = document.createElement("div");
+          bit.className = "paper-bit";
+          const w = 4 + Math.random() * 18;
+          const h = 3 + Math.random() * 6;
+          bit.style.cssText = `left:${rect.left+Math.random()*rect.width}px;top:${rect.top+Math.random()*rect.height}px;width:${w}px;height:${h}px;background:${colors[i%colors.length]};--tx:${(Math.random()-0.5)*180}px;--ty:${-(40+Math.random()*120)}px;--rot:${(Math.random()-0.5)*540}deg;--sx:${0.2+Math.random()*0.5};--dur:${0.5+Math.random()*0.4}s;`;
+          document.body.appendChild(bit);
+          bit.addEventListener("animationend", () => bit.remove(), { once: true });
+        }
+        searchInput.value = "";
+        searchClear.classList.remove("visible");
+        searchInput.focus();
+        render();
+      });
+      document.getElementById("filter-status").addEventListener("change", render);
+
+      // === Logic ===
+      let comparedData = [];
+      const selectedRows = new Set();
+
+      function parseTSV(text) {
+        if (!text.trim()) return [];
+        return text.split(/\r?\n/).map(line => {
+          const parts = line.split('\t');
+          // Kalau cuma 1 kolom saat dicopy, data = kosong. Kalau 2 kolom, data = parts[1]
+          return {
+            id: parts[0] ? parts[0].trim() : "",
+            data: parts[1] ? parts[1].trim() : ""
+          };
+        }).filter(r => r.id !== ""); // Abaikan baris kosong
+      }
+
+      document.querySelectorAll(".btn-paste-source").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const target = document.getElementById(btn.dataset.target);
+          try {
+            target.value = await navigator.clipboard.readText();
+            target.focus();
+            showToast("Clipboard dipaste");
+          } catch (e) {
+            showToast("Browser memblokir akses clipboard");
+          }
+        });
+      });
+
+      document.getElementById("btn-clear-inputs").addEventListener("click", () => {
+        document.getElementById("input-1").value = "";
+        document.getElementById("input-2").value = "";
+        comparedData = [];
+        selectedRows.clear();
+        document.getElementById("filter-status").value = "all";
+        searchInput.value = "";
+        searchClear.classList.remove("visible");
+        render();
+        document.getElementById("input-1").focus();
+        showToast("Input dan tabel dibersihkan");
+      });
+
+      document.getElementById("btn-compare").addEventListener("click", () => {
+        const t1 = document.getElementById("input-1").value;
+        const t2 = document.getElementById("input-2").value;
+
+        const list1 = parseTSV(t1);
+        const list2 = parseTSV(t2);
+
+        if (list1.length === 0 && list2.length === 0) {
+          showToast("Masukkan data terlebih dahulu");
+          return;
+        }
+
+        // Map list2 by ID untuk mempercepat pencarian (asumsi ID unik di tiap list)
+        // Kalau list2 ada duplicate ID, ini ambil yang terakhir. Sesuai logic excel VLOOKUP.
+        // Tapi di sini kita luruskan by baris jika ingin sama dengan excel "sejajar",
+        // namun untuk best comparer, biasanya disandingkan by ID.
+        // Excel "Data Comparer.xlsx" barisnya statis bersandingan (A3 sanding dengan C3).
+        // Mari kita buat 2 opsi: sandingkan by line (index) karena excel aslinya index-based.
+
+        // Kita bandingkan by baris (index) agar identik dengan file aslinya.
+        const maxLen = Math.max(list1.length, list2.length);
+        comparedData = [];
+
+        for (let i = 0; i < maxLen; i++) {
+          const item1 = list1[i] || { id: "", data: "" };
+          const item2 = list2[i] || { id: "", data: "" };
+
+          const norm1 = item1.data.trim().toLowerCase();
+          const norm2 = item2.data.trim().toLowerCase();
+          const empty1 = norm1 === "" || norm1 === "null";
+          const empty2 = norm2 === "" || norm2 === "null";
+          const res = (empty1 && empty2) || item1.data === item2.data ? "Sama" : "Beda";
+
+          comparedData.push({
+            key: i,
+            id1: item1.id,
+            d1: item1.data,
+            id2: item2.id,
+            d2: item2.data,
+            result: res
+          });
+        }
+
+        selectedRows.clear();
+        document.getElementById("filter-status").value = "beda";
+        render();
+        showToast("Perbandingan selesai");
+      });
+
+      function render() {
+        const tbody = document.getElementById("tbody");
+        if (comparedData.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Belum ada data. Paste data di atas lalu klik "Bandingkan Data".</td></tr>`;
+          document.getElementById("row-count").textContent = "0";
+          document.getElementById("check-all").checked = false;
+          return;
+        }
+
+        const filterText = searchInput.value.toLowerCase();
+        const filterStatus = document.getElementById("filter-status").value;
+
+        const filtered = comparedData.filter(r => {
+          // Status filter
+          if (filterStatus === "beda" && r.result !== "Beda") return false;
+          if (filterStatus === "sama" && r.result !== "Sama") return false;
+
+          // Search filter
+          if (!filterText) return true;
+          return r.id1.toLowerCase().includes(filterText) ||
+                 r.d1.toLowerCase().includes(filterText) ||
+                 r.id2.toLowerCase().includes(filterText) ||
+                 r.d2.toLowerCase().includes(filterText);
+        });
+
+        tbody.innerHTML = "";
+        filtered.forEach((r, i) => {
+          const tr = document.createElement("tr");
+          if (selectedRows.has(r.key)) tr.classList.add("picked");
+          const badgeClass = r.result === "Sama" ? "badge-sama" : "badge-beda";
+          tr.innerHTML = `
+            <td class="col-no">${i + 1}</td>
+            <td class="col-id">${escapeHtml(r.id1)}</td>
+            <td class="col-data">${escapeHtml(r.d1)}</td>
+            <td class="col-check"><input type="checkbox" class="row-check" data-key="${r.key}" ${selectedRows.has(r.key) ? "checked" : ""} aria-label="Pilih baris"></td>
+            <td class="col-id cell-clickable">${escapeHtml(r.id2)}</td>
+            <td class="col-data cell-clickable">${escapeHtml(r.d2)}</td>
+            <td class="col-res"><span class="badge ${badgeClass}">${r.result}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+        document.getElementById("row-count").textContent = filtered.length;
+        const visibleKeys = filtered.map(r => r.key);
+        const checkAll = document.getElementById("check-all");
+        checkAll.checked = visibleKeys.length > 0 && visibleKeys.every(key => selectedRows.has(key));
+      }
+
+      function escapeHtml(unsafe) {
+        return (unsafe || "").replace(/[&<"'>]/g, function (m) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+        });
+      }
+
+      function copyToClipboard(text, msg) {
+        if (!text.trim()) {
+          showToast("Tidak ada yang disalin");
+          return;
+        }
+        navigator.clipboard.writeText(text).then(() => showToast(msg));
+      }
+
+      document.getElementById("tbody").addEventListener("change", (e) => {
+        const cb = e.target.closest(".row-check");
+        if (!cb) return;
+        const key = Number(cb.dataset.key);
+        cb.checked ? selectedRows.add(key) : selectedRows.delete(key);
+        render();
+      });
+
+      document.getElementById("tbody").addEventListener("click", (e) => {
+        const cell = e.target.closest(".cell-clickable");
+        if (!cell) return;
+        const tr = cell.closest("tr");
+        const cb = tr.querySelector(".row-check");
+        if (!cb) return;
+        const key = Number(cb.dataset.key);
+        if (selectedRows.has(key)) {
+          selectedRows.delete(key);
+        } else {
+          selectedRows.add(key);
+        }
+        render();
+      });
+
+      document.getElementById("check-all").addEventListener("change", (e) => {
+        document.querySelectorAll(".row-check").forEach(cb => {
+          const key = Number(cb.dataset.key);
+          e.target.checked ? selectedRows.add(key) : selectedRows.delete(key);
+        });
+        render();
+      });
+
+      document.getElementById("btn-copy-selected").addEventListener("click", () => {
+        const picked = comparedData.filter(r => selectedRows.has(r.key));
+        if (picked.length === 0) {
+          showToast("Belum ada baris yang dipilih");
+          return;
+        }
+        const lines = picked.map(r => `${r.id2}\t${r.d2}`);
+        copyToClipboard(lines.join("\n"), `${picked.length} baris pilihan disalin`);
+      });
+
+      document.getElementById("btn-copy-beda").addEventListener("click", () => {
+        const beda = comparedData.filter(r => r.result === "Beda");
+        if (beda.length === 0) {
+          showToast("Tidak ada data yang Beda");
+          return;
+        }
+        const lines = beda.map(r => `${r.id2}\t${r.d2}`);
+        copyToClipboard(lines.join("\n"), `${beda.length} baris 'Beda' disalin`);
+      });
+
+      document.getElementById("btn-csv").addEventListener("click", () => {
+        if (comparedData.length === 0) {
+          showToast("Tidak ada data yang didownload");
+          return;
+        }
+        const header = "ID,Data 1,ID Compare,Data 2,Hasil";
+        const lines = comparedData.map(r =>
+          `"${r.id1.replace(/"/g, '""')}","${r.d1.replace(/"/g, '""')}","${r.id2.replace(/"/g, '""')}","${r.d2.replace(/"/g, '""')}","${r.result}"`
+        );
+        const csv = [header, ...lines].join("\n");
+        const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "data-comparer.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast("CSV didownload");
+      });
+
+    })();
+    </script>
+  </body>
+</html>

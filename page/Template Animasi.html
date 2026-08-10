@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Template Animasi - Referensi</title>
+    <meta name="description" content="Koleksi animasi siap pakai: ceklis, tema, partikel, toast, fade-in, shake, scrollbar. Preview hidup + salin kode." />
+    <style>
+      .container { max-width: 1100px; }
+      .topbar { margin-bottom: 20px; }
+      .topbar-row { align-items: flex-start; }
+      :root {
+        --bg: #0f172a;
+        --fg: #f8fafc;
+        --card: #1e293b;
+        --border: #334155;
+        --muted: #94a3b8;
+        --accent: #334155;
+        --primary: #3b82f6;
+        --primary-fg: #ffffff;
+        --input: #1e293b;
+        --row-hover: rgba(255, 255, 255, 0.04);
+      }
+      [data-theme="light"] {
+        --bg: #f8fafc;
+        --fg: #0f172a;
+        --card: #ffffff;
+        --border: #e2e8f0;
+        --muted: #64748b;
+        --accent: #f1f5f9;
+        --primary: #2563eb;
+        --primary-fg: #ffffff;
+        --input: #ffffff;
+        --row-hover: rgba(15, 23, 42, 0.04);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+        line-height: 1.5;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 16px;
+      }
+      .topbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+      h1 {
+        font-size: clamp(1.5rem, 6vw, 1.875rem);
+        margin: 0;
+        letter-spacing: -0.02em;
+      }
+      .subtitle {
+        color: var(--muted);
+        font-size: 0.875rem;
+        margin: 0 0 24px;
+      }
+      .topbar-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .home-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--fg);
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-family: inherit;
+        font-size: 0.875rem;
+        font-weight: 400;
+        cursor: pointer;
+        text-decoration: none;
+        letter-spacing: -0.01em;
+        line-height: 1.4;
+        transition: background 0.15s, border-color 0.15s;
+      }
+      .home-btn:hover {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      .home-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+      .theme-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--fg);
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s;
+      }
+      .theme-toggle:hover {
+        background: var(--accent);
+      }
+      .theme-toggle:hover svg {
+        transform: rotate(18deg) scale(1.08);
+      }
+      .theme-toggle svg {
+        width: 18px;
+        height: 18px;
+        transition: transform 0.2s ease;
+        transform-origin: center;
+      }
+      .theme-toggle.is-switching svg {
+        animation: spin-theme 0.35s ease;
+      }
+      @keyframes spin-theme {
+        from {
+          transform: rotate(0) scale(0.9);
+        }
+        to {
+          transform: rotate(360deg) scale(1);
+        }
+      }
+      .grid {
+        display: grid;
+        gap: 24px;
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 1024px) {
+        .grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+      }
+      .card-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+      .card-head h2 {
+        font-size: 1.125rem;
+        margin: 0;
+      }
+      button {
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--fg);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      button:hover {
+        background: var(--primary);
+        color: var(--primary-fg);
+        border-color: var(--primary);
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: var(--primary-fg);
+        border-color: var(--primary);
+      }
+      .desc {
+        color: var(--muted);
+        font-size: 0.8125rem;
+        margin: 0 0 14px;
+      }
+      .preview {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--input);
+      }
+      .preview iframe {
+        display: block;
+        width: 100%;
+        height: 220px;
+        border: 0;
+        background: transparent;
+      }
+      footer.note {
+        margin-top: 28px;
+        background: var(--row-hover);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+      footer.note code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        background: rgba(127, 127, 127, 0.2);
+        padding: 1px 4px;
+        border-radius: 3px;
+      }
+      .toast-container {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        left: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+        z-index: 1000;
+      }
+      .toast {
+        width: fit-content;
+        max-width: min(320px, 100%);
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: rgba(21, 128, 61, 0.95);
+        color: #fff;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        font-size: 0.875rem;
+        font-weight: 500;
+        overflow-wrap: anywhere;
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 6px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+      }
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container view active">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Template Animasi</h1>
+            <p class="subtitle">Koleksi animasi siap pakai dari "Query Data Update.html". Setiap kartu punya preview hidup dan tombol Salin Kode (dokumen HTML lengkap).</p>
+          </div>
+          <div class="topbar-actions">
+          <a href="../Tools Hub.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Home</a>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span id="theme-label">Mode Terang</span>
+          </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" id="grid"></div>
+
+      <footer class="note">
+        <p>Cara pakai: klik <code>Salin Kode</code>, tempel ke file <code>.html</code>, sesuaikan warna/warna aksen dari variable <code>--primary</code>. Tambah animasi baru cukup menambahkan entri pada array <code>animations</code> di akhir file.</p>
+      </footer>
+    </div>
+
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script>
+      function showToast(message) {
+        const container = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.textContent = message;
+        container.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add("show"));
+        window.setTimeout(() => {
+          toast.classList.remove("show");
+          window.setTimeout(() => toast.remove(), 220);
+        }, 2200);
+      }
+
+      (function () {
+        const root = document.documentElement;
+        const toggle = document.getElementById("theme-toggle");
+        const label = document.getElementById("theme-label");
+        const sun = toggle.querySelector(".icon-sun");
+        const moon = toggle.querySelector(".icon-moon");
+        function applyTheme(theme) {
+          root.setAttribute("data-theme", theme);
+          if (theme === "light") {
+            sun.style.display = "none";
+            moon.style.display = "inline";
+            label.textContent = "Mode Gelap";
+          } else {
+            sun.style.display = "inline";
+            moon.style.display = "none";
+            label.textContent = "Mode Terang";
+          }
+        }
+        let saved;
+        try {
+          saved = localStorage.getItem("theme");
+        } catch (e) {}
+        applyTheme(saved || "dark");
+        toggle.addEventListener("click", () => {
+          toggle.classList.remove("is-switching");
+          void toggle.offsetWidth;
+          toggle.classList.add("is-switching");
+          const cur = root.getAttribute("data-theme") || "dark";
+          applyTheme(cur === "dark" ? "light" : "dark");
+          try {
+            localStorage.setItem("theme", cur === "dark" ? "light" : "dark");
+          } catch (e) {}
+          toggle.blur();
+        });
+      })();
+
+      const BASE_CSS =
+        "body{background:#1e293b;color:#f8fafc;margin:0;font-family:ui-sans-serif,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;gap:12px;}";
+
+      const animations = [
+        {
+          id: "ceklis",
+          nama: "Ceklis Animasi",
+          desc: "Checkbox dengan centang bergambar (stroke draw) + efek pop saat diklik.",
+          css:
+            ".check{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;user-select:none;}" +
+            ".cb-wrap{position:relative;display:inline-flex;width:18px;height:18px;flex-shrink:0;}" +
+            ".cb-wrap input{appearance:none;-webkit-appearance:none;margin:0;width:18px;height:18px;border:2px solid #64748b;border-radius:5px;background:#0f172a;cursor:pointer;transition:background .18s,border-color .18s;}" +
+            ".cb-wrap input:checked{background:#3b82f6;border-color:#3b82f6;}" +
+            ".cb-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}" +
+            ".cb-svg polyline{fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:14;stroke-dashoffset:14;transition:stroke-dashoffset .22s ease;}" +
+            ".cb-wrap.checked .cb-svg polyline{stroke-dashoffset:0;}" +
+            ".cb-pop{animation:cb-pop .2s ease;}" +
+            "@keyframes cb-pop{0%{transform:scale(.9)}50%{transform:scale(1.25)}100%{transform:scale(1)}}",
+          html:
+            '<label class="check"><span class="cb-wrap checked"><input type="checkbox" checked><svg class="cb-svg" viewBox="0 0 16 16"><polyline points="3.5,8 6.5,11 12.5,5"/></svg></span> Pilih field</label>' +
+            '<label class="check"><span class="cb-wrap"><input type="checkbox"><svg class="cb-svg" viewBox="0 0 16 16"><polyline points="3.5,8 6.5,11 12.5,5"/></svg></span> Pilih lainnya</label>',
+          js:
+            'document.querySelectorAll(".check input").forEach(function(cb){' +
+            'cb.addEventListener("change",function(){' +
+            'var w=cb.closest(".cb-wrap");' +
+            'w.classList.toggle("checked",cb.checked);' +
+            'cb.classList.remove("cb-pop");void cb.offsetWidth;cb.classList.add("cb-pop");' +
+            'cb.addEventListener("animationend",function(){cb.classList.remove("cb-pop");},{once:true});' +
+            '});' +
+            '});',
+        },
+        {
+          id: "theme",
+          nama: "Toggle Tema Spin",
+          desc: "Tombol ganti tema gelap/terang, ikon berputar saat berganti.",
+          css:
+            "body{background:#0f172a;color:#f8fafc;}" +
+            "body.light{background:#f8fafc;color:#0f172a;}" +
+            ".tbtn{display:inline-flex;align-items:center;gap:8px;border:1px solid #334155;background:#1e293b;color:inherit;padding:8px 14px;border-radius:999px;font-size:14px;font-weight:500;cursor:pointer;}" +
+            ".tbtn svg{width:18px;height:18px;transition:transform .2s ease;transform-origin:center;}" +
+            ".tbtn:hover svg{transform:rotate(18deg) scale(1.08);}" +
+            ".tbtn.is-switching svg{animation:spin-theme .35s ease;}" +
+            "@keyframes spin-theme{from{transform:rotate(0) scale(.9)}to{transform:rotate(360deg) scale(1)}}",
+          html:
+            '<button id="mode" class="tbtn">' +
+            '<svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>' +
+            '<svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>' +
+            '<span id="label">Mode Terang</span>' +
+            '</button>',
+          js:
+            'var btn=document.getElementById("mode");' +
+            'var lbl=document.getElementById("label");' +
+            'var sun=btn.querySelector(".sun");' +
+            'var moon=btn.querySelector(".moon");' +
+            'btn.addEventListener("click",function(){' +
+            'btn.classList.remove("is-switching");void btn.offsetWidth;btn.classList.add("is-switching");' +
+            'var light=document.body.classList.toggle("light");' +
+            'sun.style.display=light?"none":"inline";' +
+            'moon.style.display=light?"inline":"none";' +
+            'lbl.textContent=light?"Mode Gelap":"Mode Terang";' +
+            '});',
+        },
+        {
+          id: "paper",
+          nama: "Partikel Kertas",
+          desc: "Saat tombol ditekan, serpihan kertas berwarna berterbangan ke atas.",
+          css:
+            ".btn{border:1px solid #334155;background:#0f172a;color:#f8fafc;padding:8px 14px;border-radius:6px;font-size:14px;cursor:pointer;}" +
+            ".bit{position:fixed;border-radius:2px;pointer-events:none;z-index:999;animation:fly .7s ease-out forwards;}" +
+            "@keyframes fly{0%{opacity:1;transform:translate(0,0) rotate(0) scaleX(1)}60%{opacity:.85}100%{opacity:0;transform:translate(var(--tx),var(--ty)) rotate(var(--rot)) scaleX(.3)}}",
+          html: '<button id="tear" class="btn">Bersihkan ✂</button>',
+          js:
+            'document.getElementById("tear").addEventListener("click",function(){' +
+            'var colors=["#3b82f6","#94a3b8","#f8fafc","#334155"];' +
+            'for(var i=0;i<14;i++){' +
+            'var b=document.createElement("div");' +
+            'b.className="bit";' +
+            'b.style.cssText="left:"+(40+Math.random()*120)+"px;top:"+(30+Math.random()*40)+"px;width:"+(4+Math.random()*14)+"px;height:"+(3+Math.random()*6)+"px;background:"+colors[i%colors.length]+";--tx:"+(Math.random()*140-70)+"px;--ty:"+(-(40+Math.random()*100))+"px;--rot:"+(Math.random()*360-180)+"deg;";' +
+            'document.body.appendChild(b);' +
+            'b.addEventListener("animationend",function(){b.remove();});' +
+            '}' +
+            '});',
+        },
+        {
+          id: "toast",
+          nama: "Toast Notifikasi",
+          desc: "Pesan muncul meluncur dari bawah, hilang otomatis.",
+          css:
+            "#tostack{position:fixed;right:16px;bottom:16px;left:16px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;z-index:999;}" +
+            ".toast{width:fit-content;max-width:min(320px,100%);padding:12px 14px;border-radius:8px;background:rgba(21,128,61,.95);color:#fff;box-shadow:0 10px 25px rgba(0,0,0,.2);font-size:14px;font-weight:500;opacity:0;transform:translateY(8px);transition:opacity .2s ease,transform .2s ease;}" +
+            ".toast.show{opacity:1;transform:translateY(0);}" +
+            ".btn{border:1px solid #334155;background:#0f172a;color:#f8fafc;padding:8px 14px;border-radius:6px;font-size:14px;cursor:pointer;}",
+          html: '<button id="go" class="btn">Tampilkan Toast</button><div id="tostack"></div>',
+          js:
+            'document.getElementById("go").addEventListener("click",function(){' +
+            'var t=document.createElement("div");' +
+            't.className="toast";' +
+            't.textContent="Berhasil disalin";' +
+            'document.getElementById("tostack").appendChild(t);' +
+            'requestAnimationFrame(function(){t.classList.add("show");});' +
+            'setTimeout(function(){t.classList.remove("show");setTimeout(function(){t.remove();},200);},2200);' +
+            '});',
+        },
+        {
+          id: "fade",
+          nama: "Input Fade-in",
+          desc: "Input muncul halus (fade + geser kecil) saat checkbox dicentang.",
+          css:
+            ".row{display:inline-flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;user-select:none;}" +
+            ".row input{margin:0;width:16px;height:16px;accent-color:#3b82f6;}" +
+            "#txt{width:220px;padding:8px 12px;border:1px solid #334155;border-radius:6px;background:#0f172a;color:#f8fafc;font-size:14px;display:none;}" +
+            "#txt.on{display:inline-block;animation:fade-in .25s ease;}" +
+            "@keyframes fade-in{from{opacity:0;transform:translateY(-3px) scale(.95)}to{opacity:1;transform:none}}",
+          html:
+            '<label class="row"><input type="checkbox" id="tg"> Mode formula</label>' +
+            '<input type="text" id="txt" placeholder="Huruf kolom (A)">',
+          js:
+            'var tg=document.getElementById("tg");' +
+            'var txt=document.getElementById("txt");' +
+            'tg.addEventListener("change",function(){txt.classList.toggle("on",tg.checked);});',
+        },
+        {
+          id: "shake",
+          nama: "Goyang (Shake)",
+          desc: "Elemen bergetar kiri-kanan — cocok untuk tanda error/duplikat.",
+          css:
+            ".btn{border:1px solid #334155;background:#0f172a;color:#f8fafc;padding:10px 16px;border-radius:6px;font-size:14px;cursor:pointer;}" +
+            ".shake{animation:shake .4s ease;}" +
+            "@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}",
+          html: '<button id="shake" class="btn">Goyang! (mis. huruf duplikat)</button>',
+          js:
+            'document.getElementById("shake").addEventListener("click",function(){' +
+            'this.classList.remove("shake");void this.offsetWidth;this.classList.add("shake");' +
+            'this.addEventListener("animationend",function(){this.classList.remove("shake");},{once:true});' +
+            '});',
+        },
+        {
+          id: "scrollbar",
+          nama: "Scrollbar Bertema",
+          desc: "Scrollbar khusus memakai warna tema, tipis dan membulat.",
+          css:
+            "body{display:block;padding:16px;background:#1e293b;color:#f8fafc;}" +
+            ".scroll{height:140px;overflow:auto;border:1px solid #334155;border-radius:8px;padding:12px;}" +
+            ".scroll p{margin:0 0 10px;font-size:13px;color:#94a3b8;}" +
+            "::-webkit-scrollbar{width:10px;height:10px;}" +
+            "::-webkit-scrollbar-track{background:transparent;}" +
+            "::-webkit-scrollbar-thumb{background:#334155;border-radius:6px;border:2px solid transparent;background-clip:content-box;}" +
+            "::-webkit-scrollbar-thumb:hover{background:#94a3b8;background-clip:content-box;}" +
+            "*{scrollbar-width:thin;scrollbar-color:#334155 transparent;}",
+          html:
+            '<div class="scroll">' +
+            "<p>Baris data ke-1</p><p>Baris data ke-2</p><p>Baris data ke-3</p><p>Baris data ke-4</p>" +
+            "<p>Baris data ke-5</p><p>Baris data ke-6</p><p>Baris data ke-7</p><p>Baris data ke-8</p>" +
+            "<p>Baris data ke-9</p><p>Baris data ke-10</p>" +
+            "</div>",
+          js: "",
+        },
+      ];
+
+      function buildDoc(a) {
+        const styles = "<style>" + BASE_CSS + "</style>" + (a.css ? "<style>" + a.css + "</style>" : "");
+        return (
+          "<!doctype html><html lang=\"id\"><head><meta charset=\"UTF-8\"></head><body>" +
+          a.html +
+          "</body>" +
+          styles +
+          (a.js ? "<script>" + a.js + "<" + "/script>" : "") +
+          "</html>"
+        );
+      }
+
+      function render() {
+        const grid = document.getElementById("grid");
+        animations.forEach((a) => {
+          const card = document.createElement("article");
+          card.className = "card";
+          card.innerHTML =
+            '<div class="card-head"><h2>' +
+            a.nama +
+            '</h2><button class="btn-primary copy" data-id="' +
+            a.id +
+            '">Salin Kode</button></div><p class="desc">' +
+            a.desc +
+            "</p>";
+          const prev = document.createElement("div");
+          prev.className = "preview";
+          const f = document.createElement("iframe");
+          f.setAttribute("sandbox", "allow-scripts");
+          f.setAttribute("title", a.nama);
+          f.srcdoc = buildDoc(a);
+          prev.appendChild(f);
+          card.appendChild(prev);
+          grid.appendChild(card);
+        });
+      }
+
+      document.addEventListener("click", (e) => {
+        const btn = e.target.closest(".copy");
+        if (!btn || btn.disabled) return;
+        const a = animations.find((x) => x.id === btn.dataset.id);
+        if (!a) return;
+        navigator.clipboard.writeText(buildDoc(a)).then(
+          () => showToast("Kode " + a.nama + " disalin"),
+          () => showToast("Gagal menyalin", true)
+        );
+      });
+
+      render();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="shared.css" />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
+    <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <title>Extract Subjects - Pembagian Mata Pelajaran</title>
+    <meta name="description" content="Upload file Excel pembagian mata pelajaran, extract data guru per kelas." />
+    <script src="xlsx.full.min.js"></script>
+    <script>if(typeof XLSX==="undefined"){var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";document.head.appendChild(s)}</script>
+    <style>
+      .container { max-width: 1100px; }
+      .topbar { margin-bottom: 20px; }
+      .topbar-row { align-items: flex-start; }
+      .panel { margin-bottom: 0; }
+      .upload-area {
+        border: 2px dashed var(--border); border-radius: 12px;
+        padding: 48px 24px; text-align: center; cursor: pointer;
+        transition: border-color .2s,background .2s;
+        background: var(--card); margin-bottom: 24px;
+      }
+      .upload-area:hover,.upload-area.dragover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--card)); }
+      .upload-area svg { width: 48px; height: 48px; color: var(--muted); margin-bottom: 12px; }
+      .upload-area i { font-size: 48px; color: var(--muted); margin-bottom: 12px; line-height: 1; }
+      .upload-area p { color: var(--muted); font-size: .875rem; margin: 0; }
+      .upload-area .filename { color: var(--primary); font-weight: 600; font-size: 1rem; margin-top: 8px; }
+      .upload-area input[type="file"] { display: none; }
+      .stats { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+      .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; flex: 1; min-width: 120px; }
+      .stat-card .label { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+      .stat-card .value { font-size: 1.25rem; font-weight: 700; margin-top: 2px; }
+      .grade-section { margin-bottom: 32px; }
+      .grade-title {
+        font-size: 1.1rem; font-weight: 600; margin: 0 0 4px;
+        display: flex; align-items: center; gap: 12px;
+      }
+      .grade-title .count { font-size: .75rem; color: var(--muted); font-weight: 400; }
+      .table-wrap { max-height: none; margin: 12px 0; }
+      table { font-size: .75rem; }
+      th { white-space: nowrap; }
+      thead th:first-child { min-width: 140px; }
+      tbody tr { border-top: 1px solid var(--border); }
+      td { border-bottom: none; font-size: .75rem; }
+      .cell-copy { cursor: pointer; padding: 2px 4px; border-radius: 3px; }
+      th .btn-primary, th .btn-success { background: transparent; border: none; color: var(--muted); padding: 2px; }
+      th .btn-primary:hover:not(:disabled), th .btn-success:hover:not(:disabled) { background: color-mix(in srgb, var(--primary) 25%, transparent); color: var(--fg); border-color: transparent; }
+      .search-wrap { position: sticky; z-index: 9; background: var(--bg); padding: 8px 0 4px; margin-bottom: 4px; }
+      .col-highlight { background: color-mix(in srgb, var(--primary) 22%, var(--card)) !important; }
+      .row-highlight { background: color-mix(in srgb, #f59e0b 28%, var(--card)) !important; outline: 1px solid #f59e0b; outline-offset: -1px; }
+      #base-rekap { position: sticky; top: 8px; z-index: 10; max-height: calc(5 * 32px + 96px); }
+      #base-wrap { max-height: calc(5 * 32px + 28px); overflow-y: auto; border-radius: 6px; border: 1px solid var(--border); scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+      #base-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+      #base-wrap::-webkit-scrollbar-track { background: transparent; }
+      #base-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+      #base-wrap::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+      #base-table { width: auto; min-width: 100%; border-collapse: collapse; }
+      #base-table thead { background: var(--accent); }
+      #base-table thead th { padding: 6px 12px; }
+      #base-table tbody tr { height: 28px; }
+      #base-table tbody td { padding: 6px 12px; text-align: center; }
+      #base-table tbody td:nth-child(-n+3) { text-align: left; }
+      #base-table tbody tr { cursor: pointer; transition: background .15s; }
+      #base-table tbody tr:hover { background: var(--row-hover); }
+      #base-table tbody tr.active-row { background: color-mix(in srgb, var(--primary) 15%, var(--card)); }
+      #base-table tbody tr.active-row td:first-child { color: var(--primary); font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <div class="container view active">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Extract Subjects</h1>
+            <p class="subtitle">Upload file Excel pembagian mata pelajaran - extract guru per kelas per mata pelajaran.</p>
+          </div>
+          <div class="topbar-actions">
+          <a href="../Tools Hub.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Home</a>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span id="theme-label">Mode Terang</span>
+          </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="upload-area" id="upload-area">
+        <i class="fad fa-file-arrow-up"></i>
+        <p>Seret file .xlsx ke sini atau <strong>klik untuk pilih file</strong></p>
+        <div class="filename" id="filename"></div>
+        <input type="file" id="file-input" accept=".xlsx,.xls" />
+      </div>
+
+      <div id="upload-note" style="display:none;text-align:center;padding:12px;margin-bottom:16px;background:var(--card);border:1px solid var(--border);border-radius:12px;font-size:.85rem;color:var(--muted)">
+        File: <strong id="note-filename" style="color:var(--fg)"></strong> sudah dimuat. Untuk ganti file, <a href="#" onclick="location.reload()" style="color:var(--primary);text-decoration:underline;cursor:pointer">refresh halaman</a>.
+      </div>
+
+      <div class="stats" id="stats" style="display:none">
+        <div class="stat-card"><div class="label">Total Guru</div><div class="value" id="stat-total">0</div></div>
+        <div class="stat-card"><div class="label">Unique Mapel</div><div class="value" id="stat-mapel">0</div></div>
+        <div class="stat-card"><div class="label">Unique Username</div><div class="value" id="stat-user">0</div></div>
+        <div class="stat-card"><div class="label">Kelas Aktif</div><div class="value" id="stat-kelas">0</div></div>
+      </div>
+
+      <div class="panel" id="base-rekap" style="display:none">
+        <div style="font-weight:600;font-size:.85rem;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+          <span>Base - Data Guru per Kelas</span>
+          <button id="base-toggle" style="font-size:.65rem;padding:1px 8px;border-radius:4px;background:var(--accent);border:1px solid var(--border);color:var(--muted);cursor:pointer">Sembunyikan</button>
+        </div>
+        <div id="base-wrap">
+        <table id="base-table" style="font-size:.75rem;width:auto;min-width:100%">
+          <thead><tr id="base-header"></tr></thead>
+          <tbody id="base-body"></tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="search-wrap" id="search-wrap" style="display:none">
+        <input type="text" id="search-input" placeholder="Cari mata pelajaran atau username..." />
+        <button class="search-clear" id="clear-search" aria-label="Hapus pencarian">
+          <i class="fad fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="main-content" style="display:none">
+        <div style="display:none;align-items:center;gap:8px;margin-bottom:8px" id="toggle-row">
+          <span style="font-size:.75rem;color:var(--muted)">Tampilkan:</span>
+          <button id="display-toggle" class="btn-primary" style="font-size:.75rem;padding:2px 10px">Nama</button>
+        </div>
+
+        <div id="grade-output"></div>
+
+        <div class="btn-group">
+          <button class="btn-primary" id="copy-all" disabled>Salin Semua</button>
+          <button class="btn-success" id="download-csv" disabled>Download CSV</button>
+        </div>
+      </div>
+
+      <footer class="note">
+        <p>Catatan</p>
+        <ul>
+          <li>File Excel harus memiliki header: Nama Guru (A), Username (B), Mata Pelajaran (C), dan jumlah rombel per kelas (D-O).</li>
+          <li>Extract mengelompokkan per tingkatan (X, XI, XII, XII DKV) - baris = mata pelajaran, kolom = kelas, isi = username guru.</li>
+          <li>Jika tidak ada kolom Username, otomatis pakai Nama Guru. Jika satu mapel di kelas yang sama diajar lebih dari 1 guru, digabung dengan <code>|</code>.</li>
+          <li>Klik pada sel untuk menyalin isi, atau gunakan tombol Salin Semua / Download CSV.</li>
+        </ul>
+      </footer>
+    </div>
+
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script>
+      /* â”€â”€ Toast â”€â”€ */
+      function showToast(msg) {
+        const c = document.getElementById("toast-container");
+        const t = document.createElement("div");
+        t.className = "toast"; t.textContent = msg;
+        c.appendChild(t);
+        requestAnimationFrame(() => t.classList.add("show"));
+        setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 220); }, 2200);
+      }
+
+      /* â”€â”€ Theme â”€â”€ */
+      (function(){
+        const root = document.documentElement, toggle = document.getElementById("theme-toggle"),
+              label = document.getElementById("theme-label"), sun = toggle.querySelector(".icon-sun"),
+              moon = toggle.querySelector(".icon-moon");
+        function applyTheme(t) {
+          root.setAttribute("data-theme", t);
+          if(t==="light"){sun.style.display="none";moon.style.display="inline";label.textContent="Mode Gelap"}
+          else{sun.style.display="inline";moon.style.display="none";label.textContent="Mode Terang"}
+          try{localStorage.setItem("theme",t)}catch(e){}
+        }
+        let s; try{s=localStorage.getItem("theme")}catch(e){}
+        applyTheme(s||"dark");
+        toggle.addEventListener("click",()=>{
+          toggle.classList.remove("is-switching");void toggle.offsetWidth;toggle.classList.add("is-switching");
+          const cur=root.getAttribute("data-theme")||"dark";applyTheme(cur==="dark"?"light":"dark");toggle.blur();
+          showToast("Tema berhasil diubah");
+        });
+      })();
+
+      document.addEventListener("click", e => {
+        if (e.target.closest(".cell-copy")) {
+          const text = e.target.closest(".cell-copy").dataset.value || e.target.closest(".cell-copy").textContent;
+          navigator.clipboard.writeText(text);
+          showToast("Berhasil disalin");
+        }
+        if (e.target.dataset.rowCopy) {
+          navigator.clipboard.writeText(e.target.dataset.rowCopy);
+          showToast("Baris disalin");
+        }
+      });
+
+      document.addEventListener("click", e => {
+        const colBtn = e.target.closest("[data-col-copy]");
+        if (colBtn) {
+          const cls = colBtn.dataset.colCopy;
+          for (const g of GRADE_GROUPS) {
+            if (!g.classes.includes(cls)) continue;
+            const tbl = gradeTables[g.label];
+            if (!tbl) continue;
+            // Only usernames/names, unique, one per line
+            const vals = [];
+            tbl.subjects.forEach(s => {
+              const cell = (tbl.cells[cls][s] || []).map(t => displayMode(t)).filter(Boolean);
+              if (cell.length) vals.push(cell.length > 1 ? cell.join("|") : cell[0]);
+            });
+            navigator.clipboard.writeText(vals.join("\n"));
+            showToast(`Kolom ${cls} - ${vals.length} guru disalin`);
+            break;
+          }
+          e.preventDefault();
+        }
+        const colFullBtn = e.target.closest("[data-col-copy-full]");
+        if (colFullBtn) {
+          const cls = colFullBtn.dataset.colCopyFull;
+          for (const g of GRADE_GROUPS) {
+            if (!g.classes.includes(cls)) continue;
+            const tbl = gradeTables[g.label];
+            if (!tbl) continue;
+            const lines = [];
+            tbl.subjects.forEach(s => {
+              const cell = (tbl.cells[cls][s] || []).map(t => displayMode(t)).filter(Boolean);
+              lines.push(s + "\t" + (cell.length > 1 ? cell.join("|") : (cell[0] || "-")));
+            });
+            navigator.clipboard.writeText(lines.join("\n"));
+            showToast(`Kolom ${cls} - ${lines.length} mapel+guru disalin`);
+            break;
+          }
+          e.preventDefault();
+        }
+        const subjBtn = e.target.closest("[data-copy-subjects]");
+        if (subjBtn) {
+          const sec = subjBtn.closest(".grade-section");
+          const titleEl = sec.querySelector(".grade-title");
+          const m = titleEl.textContent.match(/Kelas\s+(.+?)\s/);
+          if (m) {
+            const g = GRADE_GROUPS.find(gr => gr.label === m[1]);
+            if (g) {
+              const tbl = gradeTables[g.label];
+              if (tbl) {
+                navigator.clipboard.writeText(tbl.subjects.join("\n"));
+                showToast(`Mapel ${g.label} - ${tbl.subjects.length} mapel disalin`);
+              }
+            }
+          }
+          e.preventDefault();
+        }
+        const subjDelimBtn = e.target.closest("[data-copy-subjects-delim]");
+        if (subjDelimBtn) {
+          const sec = subjDelimBtn.closest(".grade-section");
+          const titleEl = sec.querySelector(".grade-title");
+          const m = titleEl.textContent.match(/Kelas\s+(.+?)\s/);
+          if (m) {
+            const g = GRADE_GROUPS.find(gr => gr.label === m[1]);
+            if (g) {
+              const tbl = gradeTables[g.label];
+              if (tbl) {
+                navigator.clipboard.writeText(tbl.subjects.join("|"));
+                showToast(`Mapel ${g.label} - delimiter | disalin`);
+              }
+            }
+          }
+          e.preventDefault();
+        }
+      });
+
+      /* â”€â”€ Grade definitions (auto-detected from Excel) â”€â”€ */
+      let GRADE_GROUPS = [];
+      let ALL_CLASSES = [];
+
+      /* â”€â”€ State â”€â”€ */
+      let allRows = [];        // teachers: [{ nama, username, mapel, teaches: { "X-1": true, ... } }]
+      let gradeTables = {};    // { "X": { subjects: [...], cells: { "X-1": { subject: [{identity,username,nama}] }, ... }, hasBoth: bool } }
+      let displayAsNama = false;
+
+      function displayMode(v) { return displayAsNama ? (v.nama || v.username) : (v.username || v.nama); }
+      function cellText(cell) { return cell.map(v => displayMode(v)).filter(Boolean).join("|"); }
+
+      /* â”€â”€ Search â”€â”€ */
+      const searchInput = document.getElementById("search-input");
+      const clearBtn = document.getElementById("clear-search");
+      searchInput.addEventListener("input", () => {
+        clearBtn.classList.toggle("visible", searchInput.value.length > 0);
+        renderGrades(searchInput.value);
+      });
+      clearBtn.addEventListener("click", () => {
+        searchInput.value = ""; clearBtn.classList.remove("visible");
+        renderGrades(""); searchInput.focus();
+      });
+
+      /* â”€â”€ Parse â”€â”€ */
+      function parseExcel(file) {
+        if (typeof XLSX === "undefined") {
+          showToast("ERROR: Library SheetJS (xlsx) tidak bisa dimuat. Periksa koneksi internet.");
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = e => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, { type: "array" });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+          if (raw.length < 2) { showToast("File tidak memiliki data"); return; }
+
+          // Find header row
+          let headerIdx = -1;
+          for (let i = 0; i < Math.min(5, raw.length); i++) {
+            const row = raw[i].map(v => String(v).trim().toLowerCase());
+            if (row.includes("nama guru") || row.includes("username") || row.includes("mata pelajaran")) { headerIdx = i; break; }
+          }
+          if (headerIdx === -1) headerIdx = 0;
+
+          const headers = raw[headerIdx].map(v => String(v).trim());
+          // Find nama, username, mapel columns (anywhere in file)
+          const namaCol = headers.findIndex(h => /nama\s*guru/i.test(h));
+          const userCol = headers.findIndex(h => /username/i.test(h));
+          const mapelCol = headers.findIndex(h => /mata\s*pelajaran/i.test(h));
+
+          // Auto-detect class columns: columns whose header looks like a class name
+          const classCols = [];
+          headers.forEach((h, i) => {
+            if (i === namaCol || i === userCol || i === mapelCol) return;
+            const t = h.trim();
+            if (t && /^(\d+|[XIV]+)/i.test(t) && !/^(nama\s*guru|username|mata\s*pelajaran)$/i.test(t)) {
+              classCols.push({ name: t, index: i });
+            }
+          });
+
+          // Group class columns by numeric/roman prefix (7â†’7A/7B/7C, Xâ†’X-1/X-2/X-3, etc.)
+          const groupMap = {};
+          classCols.forEach(({ name }) => {
+            const m = name.match(/^(\d+|[XIV]+)\s*[-â€“-]?\s*(.*)$/);
+            const prefix = m ? m[1] : name;
+            if (!groupMap[prefix]) groupMap[prefix] = { label: prefix, classes: [] };
+            if (!groupMap[prefix].classes.includes(name)) groupMap[prefix].classes.push(name);
+          });
+          // Sort classes within each group naturally
+          Object.values(groupMap).forEach(g => g.classes.sort());
+          ALL_CLASSES = classCols.map(c => c.name).filter(Boolean);
+          GRADE_GROUPS = Object.values(groupMap).sort((a, b) => {
+            const na = parseInt(a.label), nb = parseInt(b.label);
+            if (!isNaN(na) && !isNaN(nb)) return na - nb;
+            return a.label.localeCompare(b.label);
+          });
+
+          // Parse all teacher rows
+          allRows = [];
+          for (let i = headerIdx + 1; i < raw.length; i++) {
+            const row = raw[i];
+            const nama   = namaCol >= 0  ? String(row[namaCol] || "").trim() : "";
+            const username = userCol >= 0 ? String(row[userCol] || "").trim() : "";
+            const mapel  = mapelCol >= 0 ? String(row[mapelCol] || "").trim() : "";
+            if (!nama && !username && !mapel) continue;
+            if (/^mata\s*pelajaran$/i.test(mapel) && !nama) continue;
+            if (!mapel || mapel.startsWith("#")) continue;
+
+            const teaches = {};
+            classCols.forEach(({ name, index }) => {
+              const val = String(row[index] || "").trim();
+              const num = parseInt(val);
+              teaches[name] = !isNaN(num) ? num : 0;
+            });
+            const identity = username || nama;
+            allRows.push({ nama, username, mapel, teaches, identity });
+          }
+
+          // Build gradeTables: per grade group, collect subjects and cell data
+          gradeTables = {};
+          const bothUser = userCol >= 0 && allRows.some(r => r.username && r.nama && r.username !== r.nama);
+          GRADE_GROUPS.forEach(g => {
+            // Collect unique subjects taught in this grade
+            const subjects = new Set();
+            const cells = {};   // { "X-1": { "Matematika": [{identity,username,nama}], ... }, ... }
+            g.classes.forEach(c => { cells[c] = {}; });
+
+            allRows.forEach(row => {
+              g.classes.forEach(c => {
+                if (!row.teaches[c]) return;
+                subjects.add(row.mapel);
+                if (!cells[c][row.mapel]) cells[c][row.mapel] = [];
+                const obj = { identity: row.identity, username: row.username, nama: row.nama };
+                if (!cells[c][row.mapel].some(v => v.identity === row.identity)) {
+                  cells[c][row.mapel].push(obj);
+                }
+              });
+            });
+
+            gradeTables[g.label] = {
+              subjects: Array.from(subjects).sort(),
+              cells,
+              hasBoth: bothUser
+            };
+          });
+
+          // â”€â”€ Base toggle â”€â”€
+          document.getElementById("base-toggle").onclick = function() {
+            const wrap = document.getElementById("base-wrap");
+            const isHidden = wrap.style.display === "none";
+            wrap.style.display = isHidden ? "block" : "none";
+            this.textContent = isHidden ? "Sembunyikan" : "Tampilkan";
+            setTimeout(adjustSearchSticky, 50);
+          };
+
+          document.getElementById("filename").textContent = file.name;
+          document.getElementById("stats").style.display = "flex";
+          document.getElementById("main-content").style.display = "block";
+
+          // â”€â”€ Hide upload area, show refresh note â”€â”€
+          document.getElementById("upload-area").style.display = "none";
+          document.getElementById("upload-note").style.display = "block";
+          document.getElementById("note-filename").textContent = file.name;
+          document.getElementById("search-wrap").style.display = "block";
+          setTimeout(adjustSearchSticky, 50);
+
+          // â”€â”€ Build Base (Rekap) table â”€â”€
+          renderBaseTable(allRows, classCols.map(c => c.name));
+
+          const uniqueMapel = new Set(allRows.map(d => d.mapel));
+          const uniqueUser = new Set(allRows.map(d => d.username));
+          const activeClasses = ALL_CLASSES.filter(c => allRows.some(r => r.teaches[c]));
+          document.getElementById("stat-total").textContent = allRows.length;
+          document.getElementById("stat-mapel").textContent = uniqueMapel.size;
+          document.getElementById("stat-user").textContent = uniqueUser.size;
+          document.getElementById("stat-kelas").textContent = activeClasses.length;
+
+          // Toggle display
+          const hasBoth = Object.values(gradeTables).some(t => t.hasBoth);
+          const toggleRow = document.getElementById("toggle-row");
+          const toggleBtn = document.getElementById("display-toggle");
+          if (hasBoth) {
+            toggleRow.style.display = "flex";
+            displayAsNama = false;
+            toggleBtn.textContent = "Nama";
+            toggleBtn.onclick = function() {
+              displayAsNama = !displayAsNama;
+              toggleBtn.textContent = displayAsNama ? "Username" : "Nama";
+              renderGrades(searchInput.value);
+              showToast("Tampilan diubah ke " + (displayAsNama ? "Nama Guru" : "Username"));
+            };
+          } else {
+            toggleRow.style.display = "none";
+          }
+          document.getElementById("stat-kelas").textContent = activeClasses.length;
+
+          renderGrades("");
+          document.getElementById("copy-all").disabled = false;
+          document.getElementById("download-csv").disabled = false;
+          showToast(`Berhasil memuat ${allRows.length} baris data`);
+          } catch(err) {
+            showToast("Error membaca file: " + err.message);
+            console.error(err);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      }
+
+      /* â”€â”€ Render â”€â”€ */
+      function renderGrades(filter) {
+        const f = filter.toLowerCase().trim();
+        const out = document.getElementById("grade-output");
+        out.innerHTML = "";
+
+        GRADE_GROUPS.forEach(g => {
+          const tbl = gradeTables[g.label];
+          if (!tbl || tbl.subjects.length === 0) return;
+
+          let subjects = tbl.subjects;
+          if (f) {
+            subjects = subjects.filter(s => {
+              if (s.toLowerCase().includes(f)) return true;
+              // Check if any cell for this subject matches
+              return g.classes.some(c => {
+                const users = tbl.cells[c][s];
+                return users && users.some(v => (v.username && v.username.toLowerCase().includes(f)) || (v.nama && v.nama.toLowerCase().includes(f)));
+              });
+            });
+            if (subjects.length === 0) return;
+          }
+
+          const sec = document.createElement("div");
+          sec.className = "grade-section";
+
+          const title = document.createElement("div");
+          title.className = "grade-title";
+          title.innerHTML = `Kelas ${g.label} <span class="count">${subjects.length} mapel</span>`;
+          sec.appendChild(title);
+
+          const wrap = document.createElement("div");
+          wrap.className = "table-wrap";
+          const table = document.createElement("table");
+
+          // Header with copy icon per class column
+          let theadHtml = '<thead><tr><th><div style="display:flex;align-items:center;gap:3px">Mata Pelajaran<button class="btn-primary" title="Salin per baris" data-copy-subjects style="padding:1px 4px;line-height:1;font-size:.65rem;font-family:ui-monospace,monospace">↵</button><button class="btn-primary" title="Salin delimiter |" data-copy-subjects-delim style="padding:1px 4px;line-height:1;font-size:.7rem;font-family:ui-monospace,monospace;font-weight:700">|</button></div></th>';
+          g.classes.forEach(c => {
+            theadHtml += '<th data-grade-class="' + esc(c) + '"><div style="display:flex;align-items:center;gap:3px">' + c + '<button class="btn-primary" title="Salin guru ' + c + '" data-col-copy="' + esc(c) + '" style="padding:1px 4px;line-height:1;font-size:.65rem;font-family:ui-monospace,monospace">↵</button><button class="btn-success" title="Salin guru+mapel ' + c + '" data-col-copy-full="' + esc(c) + '" style="padding:1px 4px;line-height:1;font-size:.65rem;font-family:ui-monospace,monospace">⊞</button></div></th>';
+          });
+          theadHtml += '</tr></thead>';
+          table.innerHTML = theadHtml;
+
+          // Body
+          const tbody = document.createElement("tbody");
+          subjects.forEach(s => {
+            let rowHtml = `<tr><td class="cell-copy" data-value="${esc(s)}"><strong>${esc(s)}</strong></td>`;
+            g.classes.forEach(c => {
+              const cell = tbl.cells[c][s] || [];
+              const val = cellText(cell);
+              const dataVal = esc(cellText(cell));
+              // Collect teacher identities for hover highlight
+              const teacherIds = cell.map(v => esc(v.identity)).join("|");
+              rowHtml += `<td data-grade-class="${esc(c)}" data-teacher="${teacherIds}" data-subject="${esc(s)}" data-class="${esc(c)}" class="cell-copy grade-cell" data-value="${dataVal}">${val ? esc(val) : '<span style="color:var(--muted)">-</span>'}</td>`;
+            });
+            rowHtml += "</tr>";
+            tbody.innerHTML += rowHtml;
+          });
+          table.appendChild(tbody);
+          wrap.appendChild(table);
+          sec.appendChild(wrap);
+          out.appendChild(sec);
+        });
+      }
+
+      function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+      /* â”€â”€ Base Rekap Table (raw data seperti Excel) â”€â”€ */
+      function renderBaseTable(rows, classNames) {
+        const panel = document.getElementById("base-rekap");
+        const tbody = document.getElementById("base-body");
+        panel.style.display = "block";
+        tbody.innerHTML = "";
+
+        const hasBoth = rows.some(r => r.username && r.nama && r.username !== r.nama);
+
+        const thead = document.getElementById("base-header");
+        let headerHtml = '<th style="min-width:180px" data-class="__nama">Nama Guru</th>';
+        if (hasBoth) {
+          headerHtml += '<th style="min-width:120px" data-class="__user">Username</th>';
+        }
+        headerHtml += '<th style="min-width:140px" data-class="__mapel">Mata Pelajaran</th>';
+        classNames.forEach(c => {
+          headerHtml += `<th style="min-width:52px;text-align:center;cursor:pointer" data-class="${esc(c)}"
+            onmouseenter="highlightColumns('${esc(c)}',true)" onmouseleave="highlightColumns('${esc(c)}',false)">${esc(c)}</th>`;
+        });
+        thead.innerHTML = headerHtml;
+
+        // Group rows by class prefix so we can have visual separators
+        rows.forEach(r => {
+          const tr = document.createElement("tr");
+          const namaDisp = esc(r.nama);
+          const userDisp = esc(r.username || "");
+          const mapelDisp = esc(r.mapel);
+          let html = `<td style="font-weight:500" data-identity="${esc(r.identity)}">${namaDisp}</td>`;
+          if (hasBoth) html += `<td style="color:var(--muted);font-size:.7rem">${userDisp}</td>`;
+          html += `<td>${mapelDisp}</td>`;
+          classNames.forEach(c => {
+            const jam = r.teaches[c] || 0;
+            if (jam > 0) {
+              html += `<td style="text-align:center" data-class="${esc(c)}">${jam}</td>`;
+            } else {
+              html += `<td style="text-align:center;color:var(--muted)">-</td>`;
+            }
+          });
+          tr.innerHTML = html;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function adjustSearchSticky() {
+        const base = document.getElementById("base-rekap");
+        const sw = document.getElementById("search-wrap");
+        if (base && sw) {
+          sw.style.top = (base.offsetHeight + 8) + "px";
+        }
+      }
+
+      function highlightColumns(cls, on) {
+        // Highlight base table column cells
+        document.querySelectorAll(`#base-table [data-class="${esc(cls)}"]`).forEach(el => {
+          el.classList.toggle("col-highlight", on);
+        });
+        // Highlight detail grade table columns
+        document.querySelectorAll(`th[data-grade-class="${esc(cls)}"], td[data-grade-class="${esc(cls)}"]`).forEach(el => {
+          el.classList.toggle("col-highlight", on);
+        });
+      }
+
+      /* â”€â”€ Grade cell hover â†’ highlight base row â”€â”€ */
+      document.getElementById("grade-output").addEventListener("mouseover", e => {
+        const cell = e.target.closest(".grade-cell");
+        if (!cell) { clearBaseRowHighlight(); return; }
+        const teacherIds = (cell.dataset.teacher || "").split("|").filter(Boolean);
+        const cls = cell.dataset.class;
+        const subject = cell.dataset.subject;
+        if (!teacherIds.length) return;
+        highlightBaseRows(teacherIds, subject, cls);
+      });
+      document.getElementById("grade-output").addEventListener("mouseout", e => {
+        if (e.target.closest(".grade-cell")) clearBaseRowHighlight();
+      });
+
+      function highlightBaseRows(teacherIds, subject, cls) {
+        clearBaseRowHighlight();
+        const baseWrap = document.getElementById("base-wrap");
+        let matchFound = false;
+        document.querySelectorAll("#base-table tbody tr").forEach(tr => {
+          const cells = tr.querySelectorAll("td");
+          const namaTd = cells[0];
+          const hasUserCol = document.querySelector('#base-table thead th[data-class="__user"]');
+          const mapelIdx = hasUserCol ? 2 : 1;
+          const identity = namaTd ? namaTd.dataset.identity || "" : "";
+          const mapel = cells[mapelIdx] ? cells[mapelIdx].textContent.trim() : "";
+          if (teacherIds.some(id => id === identity || identity.includes(id) || id.includes(identity)) && mapel === subject) {
+            namaTd.classList.add("row-highlight");
+            if (hasUserCol && cells[1]) cells[1].classList.add("row-highlight");
+            if (cells[mapelIdx]) cells[mapelIdx].classList.add("row-highlight");
+            const ths = document.querySelectorAll("#base-table thead th");
+            let colIdx = -1;
+            ths.forEach((th, i) => { if (th.dataset.class === cls) colIdx = i; });
+            if (colIdx >= 0 && cells[colIdx]) cells[colIdx].classList.add("row-highlight");
+            if (baseWrap) {
+              const titleH = (baseWrap.previousElementSibling && baseWrap.previousElementSibling.offsetHeight) || 0;
+              const theadEl = baseWrap.querySelector("thead");
+              const theadH = theadEl ? theadEl.offsetHeight : 0;
+              const trTop = tr.getBoundingClientRect().top - baseWrap.getBoundingClientRect().top + baseWrap.scrollTop;
+              baseWrap.scrollTo({ top: trTop - titleH - theadH - 8, behavior: "smooth" });
+            }
+            matchFound = true;
+          }
+        });
+      }
+
+      function clearBaseRowHighlight() {
+        document.querySelectorAll("#base-table .row-highlight").forEach(el => el.classList.remove("row-highlight"));
+      }
+
+      /* â”€â”€ Upload â”€â”€ */
+      const uploadArea = document.getElementById("upload-area");
+      const fileInput = document.getElementById("file-input");
+
+      // Multiple strategies to ensure click works
+      function triggerUpload(e) {
+        fileInput.click();
+      }
+      uploadArea.addEventListener("click", triggerUpload);
+      uploadArea.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); } });
+      uploadArea.setAttribute("tabindex", "0");
+      uploadArea.setAttribute("role", "button");
+      uploadArea.addEventListener("dragover", e => { e.preventDefault(); uploadArea.classList.add("dragover"); });
+      uploadArea.addEventListener("dragleave", () => uploadArea.classList.remove("dragover"));
+      uploadArea.addEventListener("drop", e => { e.preventDefault(); uploadArea.classList.remove("dragover"); const f = e.dataTransfer.files[0]; if(f) parseExcel(f); });
+      fileInput.addEventListener("change", e => { const f = e.target.files[0]; if(f) parseExcel(f); });
+      // Reset file input so same file can be re-selected
+      fileInput.addEventListener("click", e => { e.target.value = ""; });
+
+      /* â”€â”€ Copy / CSV â”€â”€ */
+      function getAllText() {
+        let lines = [];
+        GRADE_GROUPS.forEach(g => {
+          const tbl = gradeTables[g.label];
+          if (!tbl || tbl.subjects.length === 0) return;
+          const header = ["Mata Pelajaran", ...g.classes];
+          lines.push(`=== Kelas ${g.label} ===`);
+          lines.push(header.join("\t"));
+          tbl.subjects.forEach(s => {
+            const row = [s, ...g.classes.map(c => cellText(tbl.cells[c][s] || []))];
+            lines.push(row.join("\t"));
+          });
+          lines.push("");
+        });
+        return lines.join("\n");
+      }
+
+      document.getElementById("copy-all").addEventListener("click", () => {
+        navigator.clipboard.writeText(getAllText());
+        showToast("Semua data disalin");
+      });
+
+      document.getElementById("download-csv").addEventListener("click", () => {
+        let csv = [];
+        GRADE_GROUPS.forEach(g => {
+          const tbl = gradeTables[g.label];
+          if (!tbl || tbl.subjects.length === 0) return;
+          const header = ["Mata Pelajaran", ...g.classes];
+          csv.push(header.join(","));
+          tbl.subjects.forEach(s => {
+            const row = [csvEsc(s), ...g.classes.map(c => csvEsc(cellText(tbl.cells[c][s] || [])))];
+            csv.push(row.join(","));
+          });
+          csv.push("");
+        });
+        const blob = new Blob(["ï»¿" + csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a"); a.href = url; a.download = "extract_subjects.csv";
+        a.click(); URL.revokeObjectURL(url);
+        showToast("CSV berhasil diunduh");
+      });
+      function csvEsc(v) {
+        const s = String(v);
+        return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g,'""')}"` : s;
+      }
+    </script>
+  </body>
+</html>
+
+

@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="shared.css" />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
+    <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <title>HTML Report Inspector</title>
+    <style>
+      .split { display: flex; flex-direction: column; gap: 0; height: calc(100vh - 140px); min-height: 400px; }
+      .pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; background: var(--card); min-height: 120px; }
+      .pane-header {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--accent); flex-shrink: 0;
+      }
+      .pane-header h3 { font-size: 0.8125rem; font-weight: 600; margin: 0; }
+      .pane-body { flex: 1; overflow: auto; position: relative; min-height: 0; }
+      .pane + .pane { margin-top: 1px; }
+
+      /* Code panel */
+      #codeBody {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.75rem; line-height: 1.5; padding: 8px 0;
+        overflow-x: auto; overflow-y: auto; min-height: 0;
+      }
+      .code-line {
+        display: block; padding: 1px 12px 1px 0; min-height: 1.5em;
+        white-space: pre; position: relative;
+      }
+      .code-line .ln {
+        display: inline-block; width: 36px; text-align: right; padding-right: 12px;
+        color: var(--muted); user-select: none; border-right: 1px solid var(--border); margin-right: 12px;
+        font-size: 0.6875rem; vertical-align: baseline;
+      }
+      /* Collapsible blocks */
+      .code-line.collapsible { cursor: pointer; }
+      .code-line.collapsible .ln::after { content: "▸ "; font-size: 0.6rem; }
+      .code-line.collapsible.open .ln::after { content: "▾ "; }
+      .code-line.collapsed-block { display: none; }
+      .code-block-end { display: none; }
+      .code-block-end.visible { display: block; }
+      .code-block-tag { color: var(--muted); font-style: italic; font-size: 0.65rem; margin-left: 48px; cursor: pointer; display: none; padding: 0 0 0 0; }
+      .code-block-tag.visible { display: block; }
+      .code-block-tag:hover { color: var(--fg); }
+      .code-line.hl { background: rgba(59, 130, 246, 0.12); }
+      .code-line .tag { color: #f472b6; }
+      .code-line .attr { color: #a78bfa; }
+      .code-line .str { color: #34d399; }
+      .code-line .cmt { color: var(--muted); font-style: italic; }
+      .code-line .txt { color: var(--fg); }
+
+      /* Preview panel */
+      #previewFrame { width: 100%; height: 100%; border: none; background: #fff; padding: 16px; box-sizing: border-box; }
+      .preview-hover-outline { outline: 2px solid var(--primary) !important; outline-offset: -1px; }
+
+      /* Dropzone */
+      .dropzone {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 64px 24px; border: 2px dashed var(--border); border-radius: 12px;
+        background: var(--card); cursor: pointer; transition: all 0.3s; margin: 0 auto; max-width: 560px;
+      }
+      .dropzone:hover, .dropzone.dragover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--card)); }
+      .dropzone i { font-size: 2.5rem; color: var(--primary); margin-bottom: 12px; }
+      .dropzone .dz-label { font-size: 0.875rem; font-weight: 500; color: var(--fg); margin-bottom: 4px; }
+      .dropzone .dz-hint { font-size: 0.75rem; color: var(--muted); }
+
+      /* Resize handle */
+      .resize-handle {
+        height: 5px; cursor: row-resize; background: var(--border); flex-shrink: 0;
+        transition: background 0.15s; position: relative; z-index: 2;
+      }
+      .resize-handle:hover, .resize-handle.active { background: var(--primary); }
+
+      /* Breadcrumb */
+      .breadcrumb {
+        display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 12px;
+        font-size: 0.6875rem; color: var(--muted); border-bottom: 1px solid var(--border);
+        background: var(--accent); min-height: 28px; align-items: center;
+      }
+      .breadcrumb span { cursor: pointer; padding: 1px 5px; border-radius: 3px; transition: all 0.15s; }
+      .breadcrumb span:hover { background: var(--row-hover); color: var(--fg); }
+      .breadcrumb .sep { color: var(--border); cursor: default; padding: 0; }
+      .breadcrumb .sep:hover { background: transparent; color: var(--border); }
+
+      /* Gap between panes */
+      .split { gap: 12px; }
+
+      /* Django template badge */
+      .tpl-badge {
+        display: inline-block; background: rgba(168, 85, 247, 0.12); color: var(--purple);
+        border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 4px;
+        padding: 0 6px; margin: 0 5px; font-size: 0.7rem; font-weight: 600; cursor: pointer;
+        white-space: nowrap; max-width: 180px; overflow: hidden; text-overflow: ellipsis;
+        vertical-align: middle; line-height: 1.6; transition: all 0.15s;
+      }
+      .tpl-badge:hover { background: rgba(168, 85, 247, 0.2); }
+      .tpl-badge .tpl-full { display: none; }
+      .tpl-badge.tpl-end { opacity: 0.45; font-size: 0.6rem; max-width: 100px; }
+
+      /* Badge tooltip */
+      #tplTooltip {
+        position: fixed; z-index: 9999; padding: 8px 12px;
+        background: var(--card); color: var(--fg); border: 1px solid var(--border);
+        border-radius: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.75rem; white-space: nowrap;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2); pointer-events: none;
+        opacity: 0; transition: opacity 0.15s; line-height: 1.5;
+      }
+      #tplTooltip.show { opacity: 1; }
+
+      /* Edit mode */
+      #editOverlay {
+        position: absolute; inset: 0; z-index: 10; display: none;
+        background: var(--bg);
+      }
+      #editOverlay textarea {
+        width: 100%; height: 100%; border: none; outline: none; resize: none; padding: 12px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.75rem; line-height: 1.6; background: var(--bg); color: var(--fg);
+        white-space: pre; tab-size: 2;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container view active" style="padding: 16px; max-width: 100%; height: 100vh; display: flex; flex-direction: column;">
+      <div class="topbar" style="margin-bottom: 20px; flex-shrink: 0;">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>HTML Report Inspector</h1>
+            <p class="subtitle">Upload file HTML rapor, hover untuk lihat kode sumber setiap elemen.</p>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+          <div class="topbar-actions">
+          <a href="../Tools Hub.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Home</a>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
+              <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              <span id="theme-label">Mode Terang</span>
+            </button>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dropzone -->
+      <div id="dropzoneWrap">
+        <input type="file" id="htmlFile" accept=".html,.htm" style="display:none;">
+        <div class="dropzone" id="dropzone">
+          <i class="fas fa-code"></i>
+          <span class="dz-label">Seret file .html ke sini, atau klik untuk memilih</span>
+          <span class="dz-hint">HTML rapor akan di-render sebagai preview interaktif</span>
+        </div>
+      </div>
+
+      <!-- Split view -->
+      <div id="splitWrap" style="display:none; flex:1; min-height:0;">
+        <div class="split" id="split">
+          <!-- Code pane -->
+          <div class="pane" id="codePane" data-open="false" style="flex: 0 0 auto; height: auto; min-height: 0;">
+            <div class="pane-header" id="codeHeader" style="cursor:pointer;">
+              <h3><i class="fas fa-caret-right" id="codeToggleIcon" style="color:var(--primary); margin-right:6px; transition:transform 0.2s;"></i><i class="fas fa-code" style="color:var(--primary); margin-right:6px;"></i>Source Code</h3>
+              <div class="d-flex" style="gap:6px;">
+                <button class="btn-sm" id="btnEdit" title="Edit kode"><i class="fas fa-pen"></i></button>
+                <button class="btn-sm" id="btnCopy" title="Salin kode"><i class="fas fa-copy"></i></button>
+                <button class="btn-sm" id="btnExport" title="Export HTML"><i class="fas fa-download"></i></button>
+                <button class="btn-sm" id="btnNewFile" title="Ganti file"><i class="fas fa-folder-open"></i></button>
+              </div>
+            </div>
+            <div class="breadcrumb" id="breadcrumb" style="display:none;"></div>
+            <div class="pane-body" id="codeBody" style="display:none;"></div>
+            <div id="editOverlay"><textarea id="editTextarea" spellcheck="false"></textarea></div>
+          </div>
+
+          <div class="resize-handle" id="resizeHandle"></div>
+
+          <!-- Preview pane -->
+          <div class="pane" id="previewPane" style="flex: 1;">
+            <div class="pane-header">
+              <h3><i class="fas fa-eye" style="color:var(--success); margin-right:6px;"></i>Preview</h3>
+              <span style="font-size:0.6875rem; color:var(--muted);" id="previewInfo"></span>
+            </div>
+            <div class="pane-body" id="previewBody">
+              <iframe id="previewFrame"></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tplTooltip"></div>
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script>
+      /* ═══════ TOAST ═══════ */
+      function showToast(msg, err) {
+        const c = document.getElementById("toast-container");
+        const t = document.createElement("div");
+        t.className = "toast" + (err ? " toast-error" : "");
+        t.textContent = msg; c.appendChild(t);
+        requestAnimationFrame(() => t.classList.add("show"));
+        setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 220); }, 2200);
+      }
+
+      /* ═══════ BADGE TOOLTIP + COPY ═══════ */
+      const tplTooltip = document.getElementById("tplTooltip");
+      let activeBadge = null;
+
+      function showTplTooltip(e, text, badgeEl) {
+        activeBadge = badgeEl;
+        tplTooltip.textContent = text;
+        tplTooltip.classList.add("show");
+        positionTooltip(e, badgeEl);
+      }
+      function hideTplTooltip() { tplTooltip.classList.remove("show"); activeBadge = null; }
+      function positionTooltip(e, badgeEl) {
+        // Get badge position relative to main document (handle iframe)
+        let br;
+        const frame = document.getElementById("previewFrame");
+        if (frame && frame.contentDocument && frame.contentDocument.contains(badgeEl)) {
+          const fr = frame.getBoundingClientRect();
+          const bRect = badgeEl.getBoundingClientRect();
+          br = { left: fr.left + bRect.left, top: fr.top + bRect.top, right: fr.left + bRect.right, bottom: fr.top + bRect.bottom, width: bRect.width, height: bRect.height };
+        } else {
+          br = badgeEl.getBoundingClientRect();
+        }
+        const tr = tplTooltip.getBoundingClientRect();
+        let x = br.left, y = br.top - tr.height - 1;
+        if (x + tr.width > window.innerWidth - 8) x = window.innerWidth - tr.width - 8;
+        if (x < 8) x = 8;
+        if (y < 8) y = br.bottom + 4;
+        tplTooltip.style.left = x + "px";
+        tplTooltip.style.top = y + "px";
+      }
+      function copyTplText(text) {
+        navigator.clipboard.writeText(text);
+        showToast("Template disalin");
+      }
+
+      // Delegate events on code panel badges
+      document.getElementById("codeBody").addEventListener("mouseover", (e) => {
+        const badge = e.target.closest(".tpl-badge");
+        if (badge) { const full = badge.querySelector(".tpl-full"); if (full) { let t = full.textContent.trim(); t = t.replace(/^\{\{/, "").replace(/\}\}$/, "").trim(); showTplTooltip(e, t, badge); } }
+      });
+      document.getElementById("codeBody").addEventListener("mousemove", (e) => {
+        if (tplTooltip.classList.contains("show") && activeBadge) positionTooltip(e, activeBadge);
+      });
+      document.getElementById("codeBody").addEventListener("mouseout", (e) => {
+        if (e.target.closest(".tpl-badge")) hideTplTooltip();
+      });
+      document.getElementById("codeBody").addEventListener("click", (e) => {
+        const badge = e.target.closest(".tpl-badge");
+        if (badge) { const full = badge.querySelector(".tpl-full"); if (full) { let t = full.textContent.trim().replace(/^\{\{/, "").replace(/\}\}$/, "").trim(); copyTplText(t); } }
+      });
+
+      /* ═══════ THEME ═══════ */
+      (function () {
+        const root = document.documentElement, toggle = document.getElementById("theme-toggle");
+        const label = document.getElementById("theme-label");
+        const sun = toggle.querySelector(".icon-sun"), moon = toggle.querySelector(".icon-moon");
+        function applyTheme(t) {
+          root.setAttribute("data-theme", t); localStorage.setItem("theme", t);
+          if (t === "dark") { sun.style.display="none"; moon.style.display=""; label.textContent="Mode Terang"; }
+          else { sun.style.display=""; moon.style.display="none"; label.textContent="Mode Gelap"; }
+        }
+        let s; try { s = localStorage.getItem("theme"); } catch(e) {}
+        applyTheme(s || "dark");
+        toggle.addEventListener("click", () => {
+          toggle.classList.remove("is-switching"); void toggle.offsetWidth; toggle.classList.add("is-switching");
+          applyTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark"); toggle.blur();
+        });
+      })();
+
+      /* ═══════ STATE ═══════ */
+      let rawHTML = "", sourceLines = [], elementMap = []; // {el, startLine, endLine, tag}
+      let highlightedEl = null, isEditing = false;
+
+      /* ═══════ DROPZONE ═══════ */
+      const dropzone = document.getElementById("dropzone"), htmlFile = document.getElementById("htmlFile");
+      dropzone.addEventListener("click", () => htmlFile.click());
+      dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
+      dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+      dropzone.addEventListener("drop", (e) => {
+        e.preventDefault(); dropzone.classList.remove("dragover");
+        const f = e.dataTransfer.files[0];
+        if (f && (f.name.endsWith(".html") || f.name.endsWith(".htm"))) loadFile(f);
+        else showToast("Hanya file .html/.htm yang didukung", true);
+      });
+      htmlFile.addEventListener("change", (e) => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+      document.getElementById("btnNewFile").addEventListener("click", () => htmlFile.click());
+
+      // Toggle source code collapse — whole pane
+      document.getElementById("codeHeader").addEventListener("click", (e) => {
+        if (e.target.closest("button")) return;
+        const pane = document.getElementById("codePane");
+        const icon = document.getElementById("codeToggleIcon");
+        const isOpen = pane.dataset.open !== "false";
+        if (isOpen) {
+          pane.dataset.open = "false";
+          pane.style.flex = "0 0 auto";
+          pane.style.height = "auto";
+          pane.style.minHeight = "0";
+          icon.style.transform = "";
+          document.getElementById("breadcrumb").style.display = "none";
+          document.getElementById("codeBody").style.display = "none";
+          document.getElementById("editOverlay").style.display = "none";
+        } else {
+          pane.dataset.open = "true";
+          pane.style.flex = "1";
+          pane.style.height = "";
+          pane.style.minHeight = "120px";
+          icon.style.transform = "rotate(90deg)";
+          document.getElementById("breadcrumb").style.display = "";
+          document.getElementById("codeBody").style.display = "";
+        }
+      });
+
+      function loadFile(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          rawHTML = e.target.result;
+          document.getElementById("dropzoneWrap").style.display = "none";
+          document.getElementById("splitWrap").style.display = "";
+          initInspector(rawHTML);
+          showToast("File dimuat: " + file.name);
+        };
+        reader.readAsText(file);
+      }
+
+      /* ═══════ INIT INSPECTOR ═══════ */
+      function initInspector(html) {
+        sourceLines = html.split("\n");
+        document.getElementById("previewInfo").textContent = sourceLines.length + " baris";
+        renderCode(html);
+        renderPreview(html);
+        buildSourceMap();
+      }
+
+      /* ═══════ RENDER CODE ═══════ */
+      function makeTplBadge(raw) {
+        // {% tag %} → compact badge, expand on hover
+        const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const stripped = raw.replace(/^\s+|\s+$/g, "");
+        // Extract first meaningful word after {% or {{
+        const m = stripped.match(/^\{%\s*(\w+)/);
+        const label = m ? m[1] : (stripped.length > 20 ? stripped.slice(0, 20) + "…" : stripped);
+        return '<span class="tpl-badge" title="' + esc(stripped) + '">' +
+          '<span class="tpl-short">' + esc(label) + '</span>' +
+          '<span class="tpl-full">' + esc(stripped) + '</span></span>';
+      }
+
+      function highlightLine(raw) {
+        // Tokenize: split into comments, template tags, HTML tags, and text
+        let out = "";
+        let pos = 0;
+        while (pos < raw.length) {
+          // Comment
+          if (raw.startsWith("<!--", pos)) {
+            const end = raw.indexOf("-->", pos + 4);
+            const comment = end === -1 ? raw.slice(pos) : raw.slice(pos, end + 3);
+            const esc = comment.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            out += '<span class="cmt">' + esc + "</span>";
+            pos += comment.length;
+          }
+          // Django template tag {% ... %}
+          else if (raw.startsWith("{%", pos)) {
+            const e = raw.indexOf("%}", pos + 2);
+            if (e !== -1) { out += makeTplBadge(raw.slice(pos, e + 2)); pos = e + 2; }
+            else { out += makeTplBadge(raw.slice(pos)); pos = raw.length; }
+          }
+          // Django template var {{ ... }}
+          else if (raw.startsWith("{{", pos)) {
+            const e = raw.indexOf("}}", pos + 2);
+            if (e !== -1) { out += makeTplBadge(raw.slice(pos, e + 2)); pos = e + 2; }
+            else { out += makeTplBadge(raw.slice(pos)); pos = raw.length; }
+          }
+          // HTML Tag
+          else if (raw[pos] === "<") {
+            const tagMatch = raw.slice(pos).match(/^<\/?([a-zA-Z][\w-]*)/);
+            if (tagMatch) {
+              // Find end of tag
+              let i = pos, inStr = false, strCh = "";
+              for (; i < raw.length; i++) {
+                const ch = raw[i];
+                if (inStr) { if (ch === strCh && raw[i - 1] !== "\\") inStr = false; }
+                else if (ch === '"' || ch === "'") { inStr = true; strCh = ch; }
+                else if (ch === ">") { i++; break; }
+              }
+              const tagStr = raw.slice(pos, i);
+              // Highlight tag parts
+              const parts = tagStr.match(/^(<\/?)([a-zA-Z][\w-]*)([\s\S]*?)(\/?>)$/);
+              if (parts) {
+                const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                out += esc(parts[1]) + '<span class="tag">' + esc(parts[2]) + "</span>";
+                // Attributes in parts[3]
+                if (parts[3]) {
+                  out += parts[3].replace(
+                    /([\w-]+)(=)(".*?"|'.*?'|\S+)/g,
+                    '<span class="attr">$1</span>$2<span class="str">$3</span>'
+                  );
+                }
+                out += esc(parts[4]);
+              } else {
+                const esc = tagStr.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                out += esc;
+              }
+              pos = i;
+            } else {
+              out += "&lt;";
+              pos++;
+            }
+          }
+          // Text
+          else {
+            let end = raw.indexOf("<", pos);
+            if (end === -1) end = raw.length;
+            const text = raw.slice(pos, end).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            out += text;
+            pos = end;
+          }
+        }
+        return out;
+      }
+
+      function renderCode(html) {
+        const body = document.getElementById("codeBody");
+        const lines = html.split("\n");
+        const blockTags = ["style", "table", "thead", "tbody", "script"];
+        const collapsed = {};
+        const blockOpens = {}; // line → {tag, count}
+
+        // Pass 1: detect collapsible blocks
+        const stack = [];
+        lines.forEach((line, i) => {
+          const t = line.trim().toLowerCase();
+          for (const tag of blockTags) {
+            if (new RegExp("^<" + tag + "[\\s>]").test(t) && !t.startsWith("</")) {
+              stack.push({ tag, openLine: i });
+              break;
+            }
+          }
+          for (const tag of blockTags) {
+            if (t === "</" + tag + ">" || t === "</" + tag + " >") {
+              if (stack.length && stack[stack.length - 1].tag === tag) {
+                const block = stack.pop();
+                blockOpens[block.openLine] = { tag: block.tag, count: i - block.openLine - 1 };
+                break;
+              }
+            }
+          }
+        });
+
+        // Pass 2: render
+        body.innerHTML = lines.map((line, i) => {
+          const highlighted = highlightLine(line);
+          const isCollapsed = !!collapsed[i];
+          const blockInfo = blockOpens[i];
+
+          let cls = "code-line";
+          if (isCollapsed) cls += " collapsed-block";
+
+          let extra = "";
+          if (blockInfo) {
+            cls += " collapsible open";
+            extra = ' data-block="' + i + '" data-count="' + blockInfo.count + '" data-tag="' + blockInfo.tag + '"';
+          }
+
+          return '<span class="' + cls + '" data-line="' + i + '"' + extra + '><span class="ln">' + (i + 1) + "</span>" + (highlighted || " ") + "</span>";
+        }).join("");
+
+        // Add click handlers for collapsible blocks
+        body.querySelectorAll("[data-block]").forEach((el) => {
+          el.classList.add("collapsible", "open");
+          el.addEventListener("click", () => {
+            const blockStart = parseInt(el.dataset.block);
+            const count = parseInt(el.dataset.count);
+            const tag = el.dataset.tag;
+            const isOpen = el.classList.contains("open");
+            el.classList.toggle("open");
+            // Toggle visibility of lines between open and close
+            for (let j = blockStart + 1; j <= blockStart + count; j++) {
+              const lineEl = body.querySelector('[data-line="' + j + '"]');
+              if (lineEl) lineEl.classList.toggle("collapsed-block", isOpen);
+            }
+            // Toggle close tag
+            const closeEl = body.querySelector('[data-line="' + (blockStart + count + 1) + '"]');
+            if (closeEl) closeEl.classList.toggle("collapsed-block", isOpen);
+          });
+        });
+      }
+
+      /* ═══════ RENDER PREVIEW ═══════ */
+      function unwrapNestedCSS(css) {
+        // Tokenize CSS into rules, then flatten nested selectors
+        const tokens = [];
+        let i = 0;
+        while (i < css.length) {
+          // Skip comments
+          if (css.startsWith("/*", i)) { const e = css.indexOf("*/", i); i = e === -1 ? css.length : e + 2; continue; }
+          // Skip @rules (keep as-is)
+          if (css[i] === "@") {
+            let j = i; while (j < css.length && css[j] !== "{") j++;
+            if (j < css.length) { let d = 1; j++; while (j < css.length && d > 0) { if (css[j] === "{") d++; else if (css[j] === "}") d--; j++; } }
+            tokens.push({ type: "at", text: css.slice(i, j) });
+            i = j; continue;
+          }
+          // Selector + block
+          if (css[i] !== "}" && css[i] !== "{") {
+            let j = i; while (j < css.length && css[j] !== "{") j++;
+            const sel = css.slice(i, j).trim();
+            if (j < css.length) {
+              j++; let d = 1, body = "";
+              while (j < css.length && d > 0) { if (css[j] === "{") d++; else if (css[j] === "}") d--; if (d > 0) body += css[j]; j++; }
+              tokens.push({ type: "rule", sel, body: body.trim() });
+              i = j; continue;
+            }
+          }
+          i++;
+        }
+        // Flatten: if body contains nested selectors (sel { ... }), unwrap them
+        let result = "";
+        for (const t of tokens) {
+          if (t.type === "at") { result += t.text + "\n"; continue; }
+          // Check if body has nested rules
+          const nested = t.body.match(/^([\s\S]*?)((?:(?:[\w\.\-\:\[\]\*\>\+\~\s,]+)\{[\s\S]*?\}\s*)+)$/);
+          if (nested && nested[1].trim()) {
+            // Has declarations before nested rules
+            result += t.sel + "{" + nested[1].trim() + "}\n";
+          }
+          // Extract nested rules from body
+          const nestRe = /([\w\.\-\:\[\]\*\>\+\~\s,]+)\{([\s\S]*?)\}/g;
+          let m;
+          const bodyToScan = nested ? t.body.slice(nested[1].length) : t.body;
+          while ((m = nestRe.exec(bodyToScan)) !== null) {
+            const childSel = m[1].trim();
+            const childBody = m[2].trim();
+            if (childBody) result += t.sel + " " + childSel + "{" + childBody + "}\n";
+          }
+          if (!nested) result += t.sel + "{" + t.body + "}\n";
+        }
+        return result;
+      }
+
+      function renderPreview(html) {
+        const frame = document.getElementById("previewFrame");
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+        const badgeCSS = '<style id="inspector-badge-css">' +
+          '.tpl-badge{display:inline-block !important;background:rgba(168,85,247,0.12) !important;color:#7c3aed !important;border:1px solid rgba(168,85,247,0.25) !important;border-radius:4px !important;padding:0 6px !important;margin:0 5px !important;font-size:0.7em !important;font-weight:600 !important;cursor:pointer !important;white-space:nowrap !important;max-width:160px !important;overflow:hidden !important;text-overflow:ellipsis !important;vertical-align:middle !important;transition:all 0.15s !important;line-height:1.6 !important;position:relative !important;z-index:10 !important}' +
+          '.tpl-badge:hover{background:rgba(168,85,247,0.22) !important}' +
+          '.tpl-badge .tpl-full{display:none !important}' +
+          '.tpl-badge.tpl-end{opacity:0.45 !important;font-size:0.6em !important;max-width:100px !important}' +
+          '</style>';
+
+        // 1. Extract <style> blocks, clean template tags inside CSS
+        let body = html;
+        const cleanedStyles = [];
+        body = body.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, function(m, css) {
+          let clean = css;
+          // {% if condition %} → show (assume true for preview)
+          clean = clean.replace(/\{%\s*if\s+[^%]*%\}/gi, "");
+          clean = clean.replace(/\{%\s*elif\s+[^%]*%\}/gi, "");
+          // {% else %} → hide (skip content)
+          clean = clean.replace(/\{%\s*else\s*%\}[\s\S]*?(?=\{%\s*endif\s*%\})/gi, "");
+          clean = clean.replace(/\{%\s*endif\s*%\}/gi, "");
+          // {% block name %}default{% endblock %} → keep default
+          clean = clean.replace(/\{%\s*block\s+\w+\s*%\}/gi, "");
+          clean = clean.replace(/\{%\s*endblock\s*\w*\s*%\}/gi, "");
+          // {{ var }} → sensible CSS defaults
+          clean = clean.replace(/\{\{\s*MEDIA_URL\s*\}\}/gi, "");
+          clean = clean.replace(/url\(\s*"\s*\{\{[^}]*\}\}\s*"\s*\)/gi, "url('data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%271%27 height=%271%27><rect fill=%27%23ddd%27 width=%271%27 height=%271%27/></svg>')");
+          clean = clean.replace(/\{\{[^}]*\}\}/g, "inherit");
+          cleanedStyles.push("<style>" + unwrapNestedCSS(clean) + "</style>");
+          return "";
+        });
+
+        // 2. Clean template tags in body content → badges
+        // Replace template tags → badges (group if/endif, for/endfor, etc. into single badge)
+        // Replace ALL template tags → individual inline badges
+        // No wrapping — every {% %} and {{ }} is its own badge, HTML between renders normally
+        const tplRe = /\{%[\s\S]*?%\}|\{\{[\s\S]*?\}\}/g;
+        let cleaned = body.replace(tplRe, function(m) {
+          const stripped = m.replace(/^\s+|\s+$/g, "");
+          const kwM = stripped.match(/\{%\s*(\w+)/);
+          const varM = stripped.match(/\{\{\s*([\w.]+)/);
+          const label = kwM ? kwM[1] : (varM ? varM[1] : (stripped.length > 24 ? stripped.slice(0, 24) + "…" : stripped));
+          const isBlock = stripped.startsWith("{%");
+          const cls = isBlock ? "tpl-badge tpl-end" : "tpl-badge";
+          return '<span class="' + cls + '"><span class="tpl-short">' + esc(label) + '</span><span class="tpl-full">' + esc(stripped) + '</span></span>';
+        });
+
+        // 3. Inject cleaned styles + badge CSS
+        const inject = badgeCSS + cleanedStyles.join("");
+        if (cleaned.includes("<head>")) {
+          cleaned = cleaned.replace("<head>", "<head>" + inject);
+        } else if (cleaned.includes("<html")) {
+          cleaned = cleaned.replace(/(<html[^>]*>)/i, "$1" + inject);
+        } else {
+          cleaned = inject + cleaned;
+        }
+
+        doc.open(); doc.write(cleaned); doc.close();
+      }
+
+      /* ═══════ SOURCE MAP ═══════ */
+      function buildSourceMap() {
+        elementMap = [];
+        const frame = document.getElementById("previewFrame");
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        if (!doc || !doc.body) return;
+
+        // Build tag→line index from source
+        const tagLineIndex = [];
+        sourceLines.forEach((line, i) => {
+          const match = line.match(/<(\/?)([\w-]+)/);
+          if (match) tagLineIndex.push({ line: i, slash: match[1] === "/", tag: match[2].toLowerCase(), col: match.index });
+        });
+
+        // Walk rendered DOM, match to source
+        const walker = doc.createTreeWalker(doc.documentElement, NodeFilter.SHOW_ELEMENT);
+        let node;
+        while (node = walker.nextNode()) {
+          const tag = node.tagName.toLowerCase();
+          // Find matching source line
+          let bestIdx = -1;
+          for (let i = 0; i < tagLineIndex.length; i++) {
+            const t = tagLineIndex[i];
+            if (t.tag === tag && !t.slash) { bestIdx = i; break; }
+          }
+          if (bestIdx >= 0) {
+            const startLine = tagLineIndex[bestIdx].line;
+            // Find end line: next opening tag at same depth or end of file
+            let depth = 0, endLine = startLine;
+            for (let i = bestIdx; i < tagLineIndex.length; i++) {
+              const t = tagLineIndex[i];
+              if (t.line <= startLine) continue;
+              if (!t.slash) depth++;
+              else { depth--; if (depth < 0) { endLine = t.line; break; } }
+            }
+            if (endLine === startLine) endLine = Math.min(startLine + 5, sourceLines.length - 1);
+            // Limit range to max 30 lines
+            endLine = Math.min(endLine, startLine + 30);
+            elementMap.push({ el: node, startLine, endLine, tag });
+          }
+        }
+      }
+
+      /* ═══════ HOVER: PREVIEW → CODE ═══════ */
+      function setupPreviewHover() {
+        const frame = document.getElementById("previewFrame");
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        if (!doc) return;
+
+        doc.addEventListener("mouseover", (e) => {
+          if (isEditing) return;
+          // Badge tooltip
+          const badge = e.target.closest ? e.target.closest(".tpl-badge") : null;
+          if (badge) { const full = badge.querySelector(".tpl-full"); if (full) { let t = full.textContent.trim(); t = t.replace(/^\{\{/, "").replace(/\}\}$/, "").trim(); showTplTooltip(e, t, badge); } return; }
+          const el = e.target.closest ? e.target : e.target.parentElement;
+          const match = elementMap.find((m) => m.el === el);
+          if (match) highlightCode(match.startLine, match.endLine, el);
+        });
+        doc.addEventListener("mousemove", (e) => {
+          if (tplTooltip.classList.contains("show") && activeBadge) positionTooltip(e, activeBadge);
+        });
+        doc.addEventListener("mouseout", (e) => {
+          if (isEditing) return;
+          if (e.target.closest && e.target.closest(".tpl-badge")) { hideTplTooltip(); return; }
+          clearHighlight();
+        });
+        doc.addEventListener("click", (e) => {
+          const badge = e.target.closest ? e.target.closest(".tpl-badge") : null;
+          if (badge) { const full = badge.querySelector(".tpl-full"); if (full) { let t = full.textContent.trim().replace(/^\{\{/, "").replace(/\}\}$/, "").trim(); copyTplText(t); } }
+        });
+      }
+
+      /* ═══════ HOVER: CODE → PREVIEW ═══════ */
+      // Code → Preview hover removed (click collapse instead)
+      /* ═══════ HIGHLIGHT LOGIC ═══════ */
+      function highlightCode(start, end, el) {
+        clearHighlight();
+        const lines = document.querySelectorAll(".code-line");
+        for (let i = start; i <= end && i < lines.length; i++) {
+          lines[i].classList.add("hl");
+        }
+
+        // Update breadcrumb
+        updateBreadcrumb(el);
+        // Highlight in preview
+        if (el) el.classList.add("preview-hover-outline");
+        highlightedEl = el;
+      }
+
+      function clearHighlight() {
+        document.querySelectorAll(".code-line.hl").forEach((l) => l.classList.remove("hl"));
+        clearPreviewHighlight();
+        document.getElementById("breadcrumb").innerHTML = "";
+      }
+
+      function highlightPreview(el) {
+        clearPreviewHighlight();
+        if (el) {
+          el.classList.add("preview-hover-outline");
+          highlightedEl = el;
+          // Also highlight code
+          const match = elementMap.find((m) => m.el === el);
+          if (match) {
+            const lines = document.querySelectorAll(".code-line");
+            for (let i = match.startLine; i <= match.endLine && i < lines.length; i++) lines[i].classList.add("hl");
+            updateBreadcrumb(el);
+          }
+        }
+      }
+
+      function clearPreviewHighlight() {
+        const frame = document.getElementById("previewFrame");
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        if (doc) doc.querySelectorAll(".preview-hover-outline").forEach((e) => e.classList.remove("preview-hover-outline"));
+        document.querySelectorAll(".code-line.hl").forEach((l) => l.classList.remove("hl"));
+        highlightedEl = null;
+      }
+
+      function updateBreadcrumb(el) {
+        const bc = document.getElementById("breadcrumb");
+        if (!el || !el.tagName) { bc.innerHTML = ""; return; }
+        const chain = [];
+        let cur = el;
+        while (cur && cur.tagName) {
+          let label = cur.tagName.toLowerCase();
+          if (cur.id) label += "#" + cur.id;
+          else if (cur.className && typeof cur.className === "string") label += "." + cur.className.trim().split(/\s+/).join(".");
+          chain.unshift(label);
+          cur = cur.parentElement;
+        }
+        bc.innerHTML = chain.map((c, i) =>
+          (i > 0 ? '<span class="sep">›</span>' : '') + `<span>${c}</span>`
+        ).join("");
+      }
+
+      /* ═══════ COPY ═══════ */
+      document.getElementById("btnCopy").addEventListener("click", () => {
+        navigator.clipboard.writeText(rawHTML);
+        showToast("Kode disalin");
+      });
+
+      /* ═══════ EXPORT ═══════ */
+      document.getElementById("btnExport").addEventListener("click", () => {
+        const blob = new Blob([rawHTML], { type: "text/html" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "report.html";
+        a.click();
+        URL.revokeObjectURL(a.href);
+        showToast("File di-export");
+      });
+
+      /* ═══════ EDIT MODE ═══════ */
+      document.getElementById("btnEdit").addEventListener("click", () => {
+        isEditing = !isEditing;
+        const overlay = document.getElementById("editOverlay");
+        const textarea = document.getElementById("editTextarea");
+        const btn = document.getElementById("btnEdit");
+
+        if (isEditing) {
+          textarea.value = rawHTML;
+          overlay.style.display = "block";
+          btn.innerHTML = '<i class="fas fa-check"></i>';
+          btn.title = "Terapkan perubahan";
+          textarea.focus();
+        } else {
+          rawHTML = textarea.value;
+          overlay.style.display = "none";
+          btn.innerHTML = '<i class="fas fa-pen"></i>';
+          btn.title = "Edit kode";
+          initInspector(rawHTML);
+          setupPreviewHover();
+          showToast("Perubahan diterapkan");
+        }
+      });
+
+      /* ═══════ RESIZE HANDLE ═══════ */
+      (function () {
+        const handle = document.getElementById("resizeHandle");
+        const codePane = document.getElementById("codePane");
+        const previewPane = document.getElementById("previewPane");
+        let dragging = false;
+
+        handle.addEventListener("mousedown", (e) => {
+          dragging = true; handle.classList.add("active");
+          e.preventDefault();
+        });
+        document.addEventListener("mousemove", (e) => {
+          if (!dragging) return;
+          const split = document.getElementById("split");
+          const rect = split.getBoundingClientRect();
+          const pct = ((e.clientY - rect.top) / rect.height) * 100;
+          const clamped = Math.max(15, Math.min(85, pct));
+          codePane.style.flex = "none";
+          codePane.style.height = clamped + "%";
+          previewPane.style.flex = "1";
+        });
+        document.addEventListener("mouseup", () => {
+          if (dragging) { dragging = false; handle.classList.remove("active"); }
+        });
+      })();
+
+      /* ═══════ SETUP HOVER AFTER PREVIEW LOADS ═══════ */
+      document.getElementById("previewFrame").addEventListener("load", () => {
+        setTimeout(() => { buildSourceMap(); setupPreviewHover(); }, 100);
+      });
+    </script>
+  </body>
+</html>

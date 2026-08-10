@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="shared.css" />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
+    <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <title>Query Data Updater - Profile & Student</title>
+    <meta name="description" content="Pilih field profile dan student untuk membuat perintah SQL UPDATE, otomatis dipisah pada 255 karakter." />
+    <style>
+      .container { max-width: 1100px; }
+      .topbar { margin-bottom: 20px; }
+      .topbar-row { align-items: flex-start; }
+      th:first-child, td:first-child { width: 36px; min-width: 36px; padding-left: 8px; }
+      th:nth-child(5), td:nth-child(5) { width: 10%; }
+    </style>
+  </head>
+  <body>
+    <div class="container view active">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Query Data Updater</h1>
+            <p class="subtitle">Pilih field yang ingin diupdate - query akan otomatis dibuat dan dipisah menjadi dua baris jika melebihi 255 karakter.</p>
+          </div>
+          <div class="topbar-actions">
+          <a href="../Tools Hub.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Home</a>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span id="theme-label">Mode Terang</span>
+          </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-bar">
+        <label class="settings-item">
+          <span class="cb-wrap" id="formula-cb-wrap">
+            <input type="checkbox" id="mode-formula" aria-label="Mode formula">
+            <svg class="cb-svg" viewBox="0 0 16 16">
+              <polyline points="3.5,8 6.5,11 12.5,5"/>
+            </svg>
+          </span>
+          Mode formula
+        </label>
+        <span class="settings-sep fade-toggle hidden" id="settings-sep">&bull;</span>
+        <label class="settings-item fade-toggle hidden" id="username-field">
+          Username
+          <input type="text" id="username-input" value="B" placeholder="huruf kolom (mis. B)" autocomplete="off">
+        </label>
+      </div>
+
+      <div class="grid">
+        <div class="panel" id="profile-panel"></div>
+        <div class="panel" id="student-panel"></div>
+      </div>
+
+      <footer class="note">
+        <p>Catatan</p>
+        <ul>
+          <li>* menandai field yang sering digunakan.</li>
+          <li>Jika formula yang dihasilkan lebih dari 255 karakter, akan otomatis dipisah menjadi dua baris pada spasi terakhir.</li>
+          <li>Ganti <code>''</code> dengan nilai Anda dan atur <code>u.username=''</code> ke user target sebelum dijalankan.</li>
+        </ul>
+      </footer>
+    </div>
+
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script>
+      function showToast(message, isError) {
+        const container = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+        toast.className = "toast" + (isError ? " toast-error" : "");
+        toast.textContent = message;
+        container.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add("show"));
+        window.setTimeout(() => {
+          toast.classList.remove("show");
+          window.setTimeout(() => toast.remove(), 300);
+        }, 2400);
+      }
+
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("button");
+        if (!button || button.disabled) return;
+
+        const label = button.getAttribute("aria-label") || button.textContent.trim() || button.id || "Tombol";
+
+        if (button.classList.contains("btn-copy-1") || button.classList.contains("btn-copy-2")) {
+          return;
+        }
+
+        if (button.id === "theme-toggle") {
+          showToast("Tema berhasil diubah");
+          return;
+        }
+
+        if (button.classList.contains("btn-clear")) {
+          showToast("Seleksi berhasil dibersihkan");
+          return;
+        }
+
+        showToast(`${label} berhasil`);
+      });
+
+      const panelUpdaters = [];
+      const settings = { formulaMode: false, username: "B" };
+
+      const letterOwner = {};
+      function trySetLetter(field, letter) {
+        if (!letter) return "";
+        const owner = letterOwner[letter];
+        if (owner && owner !== field) return owner;
+        for (const k in letterOwner) if (letterOwner[k] === field) delete letterOwner[k];
+        letterOwner[letter] = field;
+        return "";
+      }
+      function clearFieldLetter(field) {
+        for (const k in letterOwner) if (letterOwner[k] === field) delete letterOwner[k];
+      }
+
+      const formulaCb = document.getElementById("mode-formula");
+      const formulaWrap = document.getElementById("formula-cb-wrap");
+      const usernameField = document.getElementById("username-field");
+      const usernameInput = document.getElementById("username-input");
+      const settingsSep = document.getElementById("settings-sep");
+
+      function refreshSettingsUI() {
+        formulaWrap.classList.toggle("checked", settings.formulaMode);
+        usernameField.classList.toggle("hidden", !settings.formulaMode);
+        settingsSep.classList.toggle("hidden", !settings.formulaMode);
+        panelUpdaters.forEach((u) => u());
+      }
+
+      function getUsername() {
+        return settings.formulaMode ? settings.username : "";
+      }
+
+      formulaCb.addEventListener("change", (e) => {
+        settings.formulaMode = e.target.checked;
+        formulaCb.classList.add("cb-pop");
+        formulaCb.addEventListener("animationend", () => formulaCb.classList.remove("cb-pop"), { once: true });
+        refreshSettingsUI();
+      });
+
+      usernameInput.addEventListener("input", (e) => {
+        settings.username = e.target.value.trim().toUpperCase();
+        panelUpdaters.forEach((u) => u());
+      });
+
+      const profileData = [
+        { name: "id", desc: "", freq: "*" },
+        { name: "nick_name", desc: "", freq: "*" },
+        { name: "school_id", desc: "", freq: "*" },
+        { name: "gender", desc: "", freq: "*" },
+        { name: "birth_place", desc: "", freq: "*" },
+        { name: "birth_date", desc: "", freq: "*" },
+        { name: "mobile_no", desc: "", freq: "*" },
+        { name: "other_no", desc: "", freq: "*" },
+        { name: "religion", desc: "", freq: "*" },
+        { name: "address", desc: "", freq: "*" },
+        { name: "city", desc: "", freq: "*" },
+        { name: "district", desc: "Kecamatan", freq: "*" },
+        { name: "village", desc: "Kelurahan", freq: "*" },
+        { name: "province", desc: "", freq: "*" },
+        { name: "country", desc: "", freq: "*" },
+        { name: "nationality", desc: "", freq: "*" },
+        { name: "post_code", desc: "", freq: "*" },
+        { name: "rt_number", desc: "", freq: "*" },
+        { name: "rw_number", desc: "", freq: "*" },
+        { name: "user_id", desc: "", freq: "*" },
+        { name: "virtual_account", desc: "", freq: "*" },
+        { name: "middle_name", desc: "", freq: "*" },
+        { name: "profile_photo", desc: "", freq: "" },
+        { name: "preferred_lang", desc: "", freq: "" },
+        { name: "created_date", desc: "", freq: "" },
+        { name: "modified_date", desc: "", freq: "" },
+        { name: "created_by_id", desc: "", freq: "" },
+        { name: "institution_id", desc: "", freq: "" },
+        { name: "modified_by_id", desc: "", freq: "" },
+        { name: "nis", desc: "", freq: "" },
+        { name: "nisn", desc: "", freq: "" },
+        { name: "house_id", desc: "", freq: "" },
+        { name: "first_time_login", desc: "", freq: "" },
+        { name: "is_locked", desc: "", freq: "" },
+        { name: "blood_type", desc: "", freq: "" },
+        { name: "barcode_number", desc: "", freq: "" },
+        { name: "external_id", desc: "", freq: "" },
+        { name: "signature", desc: "", freq: "" },
+        { name: "locked_by_id", desc: "", freq: "" },
+        { name: "locked_date", desc: "", freq: "" },
+        { name: "dapodik_ptk_id", desc: "", freq: "" },
+        { name: "dapodik_ptk_terdaftar_id", desc: "", freq: "" },
+        { name: "nik", desc: "", freq: "" },
+        { name: "nip", desc: "", freq: "" },
+        { name: "nuptk", desc: "", freq: "" },
+        { name: "status_kepegawaian", desc: "", freq: "" },
+        { name: "clock_in_time", desc: "", freq: "" },
+        { name: "clock_out_time", desc: "", freq: "" },
+        { name: "friday_school_day", desc: "", freq: "" },
+        { name: "monday_school_day", desc: "", freq: "" },
+        { name: "saturday_school_day", desc: "", freq: "" },
+        { name: "sunday_school_day", desc: "", freq: "" },
+        { name: "thursday_school_day", desc: "", freq: "" },
+        { name: "tuesday_school_day", desc: "", freq: "" },
+        { name: "wednesday_school_day", desc: "", freq: "" },
+        { name: "shop_virtual_account", desc: "", freq: "" },
+        { name: "allergies", desc: "", freq: "" },
+        { name: "medical_history", desc: "", freq: "" },
+      ];
+
+      const studentData = [
+        { name: "id", desc: "", freq: "*" },
+        { name: "student_reg_no", desc: "NIS", freq: "*" },
+        { name: "student_reg_no_national", desc: "NISN", freq: "*" },
+        { name: "acceptance_class", desc: "", freq: "*" },
+        { name: "acceptance_date", desc: "", freq: "*" },
+        { name: "previous_school", desc: "", freq: "*" },
+        { name: "previous_school_address", desc: "", freq: "*" },
+        { name: "child_number", desc: "", freq: "*" },
+        { name: "status_in_family", desc: "", freq: "*" },
+        { name: "total_siblings", desc: "", freq: "*" },
+        { name: "father_name", desc: "", freq: "*" },
+        { name: "father_mobile_no", desc: "", freq: "*" },
+        { name: "father_education", desc: "", freq: "*" },
+        { name: "father_job", desc: "", freq: "*" },
+        { name: "father_address", desc: "", freq: "*" },
+        { name: "mother_name", desc: "", freq: "*" },
+        { name: "mother_mobile_no", desc: "", freq: "*" },
+        { name: "mother_education", desc: "", freq: "*" },
+        { name: "mother_job", desc: "", freq: "*" },
+        { name: "mother_address", desc: "", freq: "*" },
+        { name: "parent_id", desc: "", freq: "*" },
+        { name: "profile_id", desc: "", freq: "*" },
+        { name: "type_of_student_id", desc: "", freq: "" },
+        { name: "grade_id", desc: "", freq: "" },
+        { name: "guardian_address", desc: "", freq: "" },
+        { name: "guardian_job", desc: "", freq: "" },
+        { name: "guardian_name", desc: "", freq: "" },
+        { name: "father_address_city", desc: "", freq: "" },
+        { name: "father_address_country", desc: "", freq: "" },
+        { name: "father_address_district", desc: "", freq: "" },
+        { name: "father_address_post_code", desc: "", freq: "" },
+        { name: "father_address_province", desc: "", freq: "" },
+        { name: "father_address_village", desc: "", freq: "" },
+        { name: "guardian_address_city", desc: "", freq: "" },
+        { name: "guardian_address_country", desc: "", freq: "" },
+        { name: "guardian_address_district", desc: "", freq: "" },
+        { name: "guardian_address_post_code", desc: "", freq: "" },
+        { name: "guardian_address_province", desc: "", freq: "" },
+        { name: "guardian_address_village", desc: "", freq: "" },
+        { name: "graduation_code_high", desc: "", freq: "" },
+        { name: "graduation_code_middle", desc: "", freq: "" },
+        { name: "graduation_code_primary", desc: "", freq: "" },
+        { name: "graduation_year_high", desc: "", freq: "" },
+        { name: "graduation_year_middle", desc: "", freq: "" },
+        { name: "graduation_year_primary", desc: "", freq: "" },
+        { name: "guardian_mobile_no", desc: "", freq: "" },
+        { name: "is_external", desc: "", freq: "" },
+        { name: "father_birth_date", desc: "", freq: "" },
+        { name: "father_email", desc: "", freq: "" },
+        { name: "father_nationality", desc: "", freq: "" },
+        { name: "father_other_no", desc: "", freq: "" },
+        { name: "guardian_birth_date", desc: "", freq: "" },
+        { name: "guardian_email", desc: "", freq: "" },
+        { name: "guardian_nationality", desc: "", freq: "" },
+        { name: "guardian_other_no", desc: "", freq: "" },
+        { name: "mother_address_city", desc: "", freq: "" },
+        { name: "mother_address_country", desc: "", freq: "" },
+        { name: "mother_address_district", desc: "", freq: "" },
+        { name: "mother_address_post_code", desc: "", freq: "" },
+        { name: "mother_address_province", desc: "", freq: "" },
+        { name: "mother_address_village", desc: "", freq: "" },
+        { name: "mother_birth_date", desc: "", freq: "" },
+        { name: "mother_email", desc: "", freq: "" },
+        { name: "mother_nationality", desc: "", freq: "" },
+        { name: "mother_other_no", desc: "", freq: "" },
+        { name: "emergency_mobile_no", desc: "", freq: "" },
+        { name: "emergency_name", desc: "", freq: "" },
+        { name: "emergency_other_no", desc: "", freq: "" },
+        { name: "emergency_relationship", desc: "", freq: "" },
+        { name: "guardian_education", desc: "", freq: "" },
+        { name: "father_birth_place", desc: "", freq: "" },
+        { name: "father_company", desc: "", freq: "" },
+        { name: "father_office_address", desc: "", freq: "" },
+        { name: "father_religion", desc: "", freq: "" },
+        { name: "mother_birth_place", desc: "", freq: "" },
+        { name: "mother_company", desc: "", freq: "" },
+        { name: "mother_office_address", desc: "", freq: "" },
+        { name: "mother_religion", desc: "", freq: "" },
+        { name: "student_nik", desc: "", freq: "" },
+        { name: "leave_school_date", desc: "", freq: "" },
+        { name: "reason_for_leave_school", desc: "", freq: "" },
+        { name: "leave_school_scs_id", desc: "", freq: "" },
+        { name: "student_card", desc: "", freq: "" },
+        { name: "dapodik_peserta_didik_id", desc: "", freq: "" },
+        { name: "dapodik_anggota_rombel_id", desc: "", freq: "" },
+        { name: "graduation_code_preschool", desc: "", freq: "" },
+        { name: "graduation_year_preschool", desc: "", freq: "" },
+        { name: "skhun_code_high", desc: "", freq: "" },
+        { name: "skhun_code_middle", desc: "", freq: "" },
+        { name: "skhun_code_preschool", desc: "", freq: "" },
+        { name: "skhun_code_primary", desc: "", freq: "" },
+        { name: "skhun_date_high", desc: "", freq: "" },
+        { name: "skhun_date_middle", desc: "", freq: "" },
+        { name: "skhun_date_preschool", desc: "", freq: "" },
+        { name: "skhun_date_primary", desc: "", freq: "" },
+        { name: "student_status", desc: "", freq: "" },
+        { name: "created_by_id", desc: "", freq: "" },
+        { name: "created_date", desc: "", freq: "" },
+        { name: "modified_by_id", desc: "", freq: "" },
+        { name: "modified_date", desc: "", freq: "" },
+        { name: "nis_high", desc: "", freq: "" },
+        { name: "nis_middle", desc: "", freq: "" },
+        { name: "nis_preschool", desc: "", freq: "" },
+        { name: "nis_primary", desc: "", freq: "" },
+        { name: "leave_by_id", desc: "", freq: "" },
+        { name: "leave_date", desc: "", freq: "" },
+      ];
+
+      const LIMIT = 255;
+
+      function buildPlainQuery(prefix, suffix, fields, username) {
+        if (fields.length === 0) return "";
+        return prefix + fields.map((f) => f + "=''").join(", ") + suffix + (username === undefined ? getUsername() : username) + "';";
+      }
+
+      function formulaize(segment, fields, letters, usernameRef) {
+        if (!segment) return "";
+        const parts = [];
+        let rest = segment;
+        fields.forEach((name) => {
+          const token = name + "=''";
+          const idx = rest.indexOf(token);
+          if (idx === -1) return;
+          parts.push(rest.slice(0, idx + name.length + 2));
+          parts.push("CELL:" + (letters[name] || "?") + "2");
+          rest = rest.slice(idx + name.length + 2);
+        });
+        const utk = "u.username=''";
+        const uid = rest.indexOf(utk);
+        if (uid !== -1) {
+          parts.push(rest.slice(0, uid + utk.length - 1));
+          parts.push("CELL:" + usernameRef);
+          rest = rest.slice(uid + utk.length - 1);
+        }
+        parts.push(rest);
+        let s = '=CONCAT("';
+        parts.forEach((p) => {
+          if (p.startsWith("CELL:")) s += '",' + p.slice(5) + ',"';
+          else s += p;
+        });
+        return s + '")';
+      }
+
+      function splitAt255(txt) {
+        if (!txt) return ["", ""];
+        const headLimit = LIMIT - 1;
+        if (txt.length <= headLimit) return [txt, ""];
+        const head = txt.slice(0, headLimit);
+        const p = head.lastIndexOf(" ");
+        if (p <= 0) return [head, txt.slice(headLimit)];
+        return [txt.slice(0, p), txt.slice(p)];
+      }
+
+      function createPanel(containerId, title, fields, prefix, suffix) {
+        const container = document.getElementById(containerId);
+        const state = { selected: {}, order: [], filter: "", letters: {} };
+
+        const header = document.createElement("div");
+        header.className = "panel-header";
+        header.innerHTML = `
+        <div class="panel-title">
+          <div class="panel-title-row">
+            <h2>${title}</h2>
+            <button class="btn-clear">Bersihkan</button>
+          </div>
+          <p class="panel-meta"><span class="count">0</span> dipilih dari ${fields.length}<span class="warning-inline hidden" role="alert"></span></p>
+        </div>
+      `;
+        container.appendChild(header);
+
+        const searchWrap = document.createElement("div");
+        searchWrap.className = "search-wrap";
+        const searchInput = document.createElement("input");
+        searchInput.type = "text";
+        searchInput.placeholder = "Cari field…";
+        const clearBtn = document.createElement("button");
+        clearBtn.className = "search-clear";
+        clearBtn.type = "button";
+        clearBtn.setAttribute("aria-label", "Hapus pencarian");
+        clearBtn.innerHTML = `<i class="fad fa-xmark"></i>`;
+        searchWrap.appendChild(searchInput);
+        searchWrap.appendChild(clearBtn);
+        container.appendChild(searchWrap);
+
+        const tableWrap = document.createElement("div");
+        tableWrap.className = "table-wrap";
+        const table = document.createElement("table");
+        table.innerHTML = `
+        <thead>
+          <tr>
+            <th></th>
+            <th>Field</th>
+            <th>Catatan</th>
+            <th>Huruf</th>
+            <th class="freq">Frek</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+        tableWrap.appendChild(table);
+        container.appendChild(tableWrap);
+
+        const output = document.createElement("div");
+        output.className = "output";
+        output.innerHTML = `
+        <div>
+          <div class="output-label">
+            <span class="label-1">Baris 1 — 0 karakter</span>
+            <button class="btn-primary btn-copy-1" disabled>Salin</button>
+          </div>
+          <textarea class="line-1" readonly></textarea>
+        </div>
+        <div class="line-2-block">
+          <div class="output-label">
+            <span class="label-2">Baris 2 (≤ 255 karakter) — 0 karakter</span>
+            <button class="btn-primary btn-copy-2" disabled>Salin</button>
+          </div>
+          <textarea class="line-2" readonly></textarea>
+        </div>
+      `;
+        container.appendChild(output);
+
+        const tbody = table.querySelector("tbody");
+        const countEl = header.querySelector(".count");
+        const line1El = output.querySelector(".line-1");
+        const line2El = output.querySelector(".line-2");
+        const line2Block = output.querySelector(".line-2-block");
+        const label1El = output.querySelector(".label-1");
+        const label2El = output.querySelector(".label-2");
+        const warningEl = header.querySelector(".warning-inline");
+        const copy1Btn = output.querySelector(".btn-copy-1");
+        const copy2Btn = output.querySelector(".btn-copy-2");
+        const btnClear = header.querySelector(".btn-clear");
+
+        function getFiltered() {
+          const f = state.filter.toLowerCase();
+          return f ? fields.filter((x) => x.name.toLowerCase().includes(f) || x.desc.toLowerCase().includes(f)) : fields;
+        }
+
+        function ensureLetterInput(tr, f, isSelected) {
+          let input = tr.querySelector(".letter-input");
+          if (isSelected && !input) {
+            input = document.createElement("input");
+            input.type = "text";
+            input.className = "letter-input";
+            input.value = state.letters[f.name] || "";
+            input.placeholder = "A";
+            input.setAttribute("aria-label", "Huruf kolom " + f.name);
+            input.addEventListener("click", (e) => e.stopPropagation());
+            input.addEventListener("input", (e) => {
+              const v = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 1);
+              if (input.value !== v) input.value = v;
+              if (v === state.letters[f.name]) return;
+              if (!v) {
+                clearFieldLetter(f.name);
+                state.letters[f.name] = "";
+                refreshOutput();
+                return;
+              }
+              const conflict = trySetLetter(f.name, v);
+              if (conflict) {
+                input.value = state.letters[f.name] || "";
+                input.classList.add("dup");
+                setTimeout(() => input.classList.remove("dup"), 500);
+                showToast("Huruf " + v + " sudah dipakai field " + conflict, true);
+                return;
+              }
+              state.letters[f.name] = v;
+              refreshOutput();
+            });
+            tr.children[3].appendChild(input);
+          } else if (!isSelected && input) {
+            input.remove();
+          }
+        }
+
+        function getPreview(selectedMap) {
+          const chosen = state.order.filter((n) => selectedMap[n]);
+          const plain = buildPlainQuery(prefix, suffix, chosen, "");
+          const [l1, l2] = splitAt255(plain);
+          if (settings.formulaMode) {
+            const ref = getUsername() + "2";
+            const f1 = formulaize(l1, chosen, state.letters, ref);
+            const f2 = formulaize(l2, chosen, state.letters, ref);
+            return { chosen, query: f1, line1: f1, line2: f2, count: l1.length, overLimit: l2.length > LIMIT };
+          }
+          const plainB = buildPlainQuery(prefix, suffix, chosen);
+          const [line1, line2] = splitAt255(plainB);
+          return { chosen, query: plainB, line1, line2, count: line1.length, overLimit: line2.length > LIMIT };
+        }
+
+        function render() {
+          const filtered = getFiltered();
+          tbody.innerHTML = "";
+
+          const selectedMap = state.selected;
+
+          filtered.forEach((f) => {
+            const isSelected = Boolean(selectedMap[f.name]);
+            const tr = document.createElement("tr");
+            if (isSelected) tr.classList.add("selected");
+            tr.innerHTML = `
+            <td><div class="cb-wrap${isSelected ? " checked" : ""}">
+              <input type="checkbox" ${isSelected ? "checked" : ""}>
+              <svg class="cb-svg" viewBox="0 0 16 16">
+                <polyline points="3.5,8 6.5,11 12.5,5"/>
+              </svg>
+            </div></td>
+            <td class="field-name">${f.name}</td>
+            <td class="desc">${f.desc}</td>
+            <td></td>
+            <td class="freq">${f.freq}</td>
+          `;
+            const checkbox = tr.querySelector("input");
+            ensureLetterInput(tr, f, isSelected);
+
+            function doSelect(nextVal) {
+              const nextSelected = { ...selectedMap, [f.name]: nextVal };
+              const nextPreview = getPreview(nextSelected);
+              if (nextVal && nextPreview.overLimit) {
+                warningEl.textContent = "Peringatan: memilih field ini akan membuat baris 2 melebihi 255 karakter.";
+                warningEl.classList.remove("hidden");
+                return;
+              }
+              warningEl.textContent = "";
+              warningEl.classList.add("hidden");
+              const cbWrap = tr.querySelector(".cb-wrap");
+              cbWrap.classList.toggle("checked", nextVal);
+              tr.classList.toggle("selected", nextVal);
+              checkbox.checked = nextVal;
+              checkbox.classList.add("cb-pop");
+              checkbox.addEventListener("animationend", () => checkbox.classList.remove("cb-pop"), { once: true });
+              state.selected[f.name] = nextVal;
+              if (nextVal) {
+                state.order = state.order.filter((n) => n !== f.name);
+                state.order.push(f.name);
+              }
+              ensureLetterInput(tr, f, nextVal);
+              if (!nextVal) {
+                clearFieldLetter(f.name);
+                state.letters[f.name] = "";
+              }
+              else {
+                const li = tr.querySelector(".letter-input");
+                if (li) li.focus();
+              }
+              refreshOutput();
+            }
+
+            tr.addEventListener("click", (e) => {
+              if (e.target === checkbox || e.target.closest(".letter-input")) return;
+              doSelect(!Boolean(state.selected[f.name]));
+            });
+            checkbox.addEventListener("click", (e) => {
+              e.stopPropagation();
+              checkbox.checked = !checkbox.checked;
+              doSelect(!Boolean(state.selected[f.name]));
+            });
+            tbody.appendChild(tr);
+          });
+
+          refreshOutput();
+        }
+
+        function refreshOutput() {
+          const preview = getPreview(state.selected);
+          const { line1, line2, overLimit } = preview;
+          countEl.textContent = preview.chosen.length;
+          line1El.value = line1;
+          line2El.value = line2;
+          label1El.textContent = `Baris 1 — ${preview.count} karakter`;
+          label2El.textContent = `Baris 2 (${line2.length > LIMIT ? "melewati" : "≤"} 255 karakter) — ${line2.length} karakter`;
+          warningEl.textContent = overLimit ? "Peringatan: baris 2 sudah melebihi 255 karakter. Kurangi jumlah field yang dipilih." : warningEl.textContent;
+          warningEl.classList.toggle("hidden", !overLimit && warningEl.textContent === "");
+          copy1Btn.disabled = !line1;
+          copy2Btn.disabled = !line2;
+          btnClear.disabled = false;
+        }
+
+        function update() {
+          render();
+        }
+
+        searchInput.addEventListener("input", (e) => {
+          state.filter = e.target.value;
+          clearBtn.classList.toggle("visible", state.filter.length > 0);
+          render();
+        });
+        clearBtn.addEventListener("click", () => {
+          const rect = searchInput.getBoundingClientRect();
+          const colors = ["var(--primary)", "var(--muted)", "var(--fg)", "var(--border)"];
+          const count = 14;
+          for (let i = 0; i < count; i++) {
+            const bit = document.createElement("div");
+            bit.className = "paper-bit";
+            const w = 4 + Math.random() * 18;
+            const h = 3 + Math.random() * 6;
+            const startX = rect.left + Math.random() * rect.width;
+            const startY = rect.top + Math.random() * rect.height;
+            const tx = (Math.random() - 0.5) * 180;
+            const ty = -(40 + Math.random() * 120);
+            const rot = (Math.random() - 0.5) * 540;
+            const sx = 0.2 + Math.random() * 0.5;
+            const dur = 0.5 + Math.random() * 0.4;
+            bit.style.cssText = `
+              left:${startX}px; top:${startY}px;
+              width:${w}px; height:${h}px;
+              background:${colors[i % colors.length]};
+              --tx:${tx}px; --ty:${ty}px;
+              --rot:${rot}deg; --sx:${sx};
+              --dur:${dur}s;
+            `;
+            document.body.appendChild(bit);
+            bit.addEventListener("animationend", () => bit.remove(), { once: true });
+          }
+          searchInput.value = "";
+          state.filter = "";
+          clearBtn.classList.remove("visible");
+          searchInput.focus();
+          render();
+        });
+        btnClear.addEventListener("click", () => {
+          state.selected = {};
+          state.order = [];
+          fields.forEach((f2) => clearFieldLetter(f2.name));
+          state.letters = {};
+          update();
+        });
+
+        function handleCopy(el) {
+          if (el.value.includes("?")) {
+            showToast("Harap isi semua huruf kolom (letter input) terlebih dahulu", true);
+            return;
+          }
+          navigator.clipboard.writeText(el.value);
+          showToast("Teks berhasil disalin");
+        }
+        copy1Btn.addEventListener("click", () => handleCopy(line1El));
+        copy2Btn.addEventListener("click", () => handleCopy(line2El));
+
+        panelUpdaters.push(refreshOutput);
+        render();
+      }
+
+      createPanel("profile-panel", "Profile - common_profile", profileData, "update common_profile p set ", " from auth_user u where u.id=p.user_id and u.username='");
+
+      createPanel("student-panel", "Student - common_student", studentData, "update common_student s set ", " from common_profile p, auth_user u where s.profile_id=p.id and p.user_id=u.id and u.username='");
+    </script>
+    <script src="theme.js"></script>
+  </body>
+</html>

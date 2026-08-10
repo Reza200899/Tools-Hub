@@ -1,0 +1,1241 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Kalender Akademik Viewer</title>
+    <meta name="description" content="Buat daftar event kalender akademik secara manual atau bulk paste." />
+    <link rel="stylesheet" href="shared.css" />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
+    <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <style>
+      .container { max-width: 1100px; }
+      .topbar { margin-bottom: 20px; }
+      .topbar-row { align-items: flex-start; }
+      /* ── 1. Grid layout ── */
+      .main-grid {
+        display: block;
+      }
+      .left-col {
+        margin-bottom: 32px;
+      }
+      .right-col {
+        min-height: 400px;
+      }
+      @media (min-width: 900px) {
+        .main-grid {
+          display: grid;
+          grid-template-columns: 400px 1fr;
+          gap: 20px;
+          align-items: start;
+        }
+        .left-col {
+          margin-bottom: 0;
+        }
+      }
+
+      /* ── 2. Container / panel ── */
+      .container {
+        max-width: 1400px;
+      }
+      .panel {
+        padding: 16px;
+        margin-bottom: 0;
+      }
+      .panel-header {
+        margin-bottom: 10px;
+      }
+
+      /* ── 3. Form ── */
+      textarea {
+        min-height: 100px;
+      }
+      .form-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+      }
+      .form-row > div {
+        flex: 1;
+        min-width: 120px;
+      }
+
+      /* ── 4. Table ── */
+      .table-wrap {
+        max-height: calc(100vh - 200px);
+      }
+      th,
+      td {
+        padding: 6px 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 0;
+      }
+      tbody tr {
+        border-top: 1px solid var(--border);
+      }
+      td {
+        border-bottom: none;
+      }
+      .jam {
+        text-align: center;
+        font-weight: 600;
+      }
+
+      /* ── 10. Event colors ── */
+      .ev-holiday {
+        color: var(--red) !important;
+      }
+      .ev-holiday .tbl-edit {
+        color: var(--red) !important;
+      }
+      .ev-holiday .tbl-select {
+        color: var(--red) !important;
+      }
+      .ev-holiday .tbl-date {
+        color: var(--red) !important;
+      }
+      .ev-event {
+        color: var(--primary) !important;
+      }
+      .ev-event .tbl-edit {
+        color: var(--fg) !important;
+      }
+      .ev-event .tbl-date {
+        color: var(--primary) !important;
+      }
+
+      /* ── 11. Inline edit ── */
+      .tbl-edit {
+        width: 100%;
+        padding: 4px 6px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        background: transparent;
+        color: var(--fg);
+        font-size: 0.8125rem;
+        font-family: inherit;
+        outline: none;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+      }
+      .tbl-edit:focus {
+        border-color: var(--primary);
+        background: var(--input);
+      }
+      .tbl-edit:hover {
+        border-color: var(--border);
+      }
+      .tbl-date {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.75rem;
+        width: 100px;
+        color: var(--primary);
+      }
+      .tbl-date-wrap {
+        position: relative;
+        display: inline-block;
+      }
+      .tbl-date-display {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.75rem;
+        cursor: pointer;
+        padding: 4px 6px;
+        border-radius: 4px;
+        border: 1px solid transparent;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+        white-space: nowrap;
+        display: inline-block;
+      }
+      .tbl-date-display:hover {
+        border-color: var(--border);
+        background: var(--input);
+      }
+      .tbl-date-display .dd {
+        font-weight: 400;
+      }
+      .tbl-date-display .rest {
+        color: var(--muted);
+      }
+      .tbl-date-wrap .tbl-date {
+        display: none;
+      }
+      .tbl-date-wrap.editing .tbl-date {
+        display: block;
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+      }
+      .tbl-date-wrap.editing .tbl-date-display {
+        visibility: hidden;
+      }
+      .modal .tbl-date {
+        width: 80px;
+        max-width: 80px;
+        padding: 4px 6px;
+        font-size: 0.6875rem;
+      }
+      .modal th:nth-child(3),
+      .modal th:nth-child(4) {
+        width: 85px;
+      }
+      .tbl-select {
+        padding: 4px 6px;
+        padding-right: 18px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        background-color: transparent;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 6px center;
+        color: var(--fg);
+        font-size: 0.75rem;
+        font-family: inherit;
+        outline: none;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          background-color 0.15s;
+      }
+      .tbl-select:focus {
+        border-color: var(--primary);
+        background: var(--input);
+      }
+      .tbl-select:hover {
+        border-color: var(--border);
+      }
+
+      /* ── 5. Badges ── */
+      .badge-event {
+        background: rgba(59, 130, 246, 0.15);
+        color: var(--primary);
+      }
+      .badge-holiday {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--red);
+      }
+      .badge-exam {
+        background: rgba(168, 85, 247, 0.15);
+        color: var(--purple);
+      }
+
+      /* ── 6. Modal ── */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 900;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        backdrop-filter: blur(4px);
+      }
+      .modal {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        width: 100%;
+        max-width: 900px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      }
+      .modal-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .modal-header h2 {
+        font-size: 1.125rem;
+        margin: 0;
+      }
+      .modal-header p {
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin: 2px 0 0;
+      }
+
+      /* ── 7. Misc ── */
+      .periode-table {
+        width: auto !important;
+        border: none !important;
+        border-collapse: collapse !important;
+      }
+      .periode-table th, .periode-table td, .periode-table tr, .periode-table thead, .periode-table tbody {
+        border: none !important;
+      }
+
+      @media (max-width: 480px) {
+        th,
+        td {
+          padding: 4px 6px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container view active">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Kalender Akademik</h1>
+            <p class="subtitle">Buat daftar event kalender - bulk paste.</p>
+          </div>
+          <div class="topbar-actions">
+          <a href="../Tools Hub.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Home</a>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span id="theme-label">Mode Terang</span>
+          </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="main-grid">
+        <div class="left-col">
+          <!-- Bulk Add Panel -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <h2>Tambah Bulk</h2>
+                <p>Paste tanggal &amp; nama kegiatan, pilih bulan &amp; tahun.</p>
+              </div>
+            </div>
+            <div class="form-row">
+              <div>
+                <label for="bulk-month">Bulan</label>
+                <select id="bulk-month">
+                  <option value="1">Januari</option>
+                  <option value="2">Februari</option>
+                  <option value="3">Maret</option>
+                  <option value="4">April</option>
+                  <option value="5">Mei</option>
+                  <option value="6">Juni</option>
+                  <option value="7">Juli</option>
+                  <option value="8">Agustus</option>
+                  <option value="9">September</option>
+                  <option value="10">Oktober</option>
+                  <option value="11">November</option>
+                  <option value="12">Desember</option>
+                </select>
+              </div>
+              <div>
+                <label for="bulk-year">Tahun</label>
+                <select id="bulk-year"></select>
+              </div>
+              <div>
+                <label for="bulk-section">Section</label>
+                <input type="text" id="bulk-section" placeholder="SMPBi / SMA..." />
+              </div>
+            </div>
+            <label for="bulk-text">Tanggal &amp; Nama Kegiatan</label>
+            <textarea id="bulk-text" placeholder="13	Awal Tahun Pelajaran Baru&#10;17	Misa Awal Thn. Pelajaran Baru"></textarea>
+            <p class="hint">Format: <code>tanggal TAB nama kegiatan</code>. Tanggal bisa: <code>13</code>, <code>6-7</code> (rentang), <code>19 to 28</code> (rentang), <code>5, 7, 10</code> (per tanggal), <code>21 July 2025</code> (lengkap), <code>1 - 12 Sept 2025</code> (rentang lengkap). Pemisah: Tab, Pipe (<code>|</code>), atau Titik Dua (<code>:</code>).</p>
+            <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap">
+              <button class="btn-primary" id="btn-bulk-preview">Tambah</button>
+              <button id="btn-bulk-clear">Bersihkan</button>
+            </div>
+          </div>
+        </div>
+        <!-- /left-col -->
+
+        <div class="right-col">
+          <!-- Event Table -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <h2>Daftar Event</h2>
+                <p id="table-subtitle"></p>
+              </div>
+              <div class="btn-group">
+                <button id="btn-filter-all" class="btn-primary btn-sm">All</button>
+                <button id="btn-filter-event" class="btn-sm">Event</button>
+                <button id="btn-filter-holiday" class="btn-sm">Holiday</button>
+                <button disabled style="border: none; background: none; cursor: default; padding: 7px 2px; opacity: 1; color: var(--muted); min-width: 0; width: 12px; text-align: center">|</button>
+                <button id="btn-import-file">Import File</button>
+                <button id="btn-periode">Periode</button>
+                <button id="btn-copy-all">Salin Semua</button>
+                <button class="btn-danger" id="btn-delete-all">Hapus Semua</button>
+                <input type="file" id="import-file-input" accept=".csv,.xlsx,.xls" style="display:none" />
+              </div>
+            </div>
+            <div style="position: relative; margin-bottom: 8px">
+              <input type="text" id="event-search" placeholder="Cari event..." style="padding-left: 32px" />
+              <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--muted); pointer-events: none"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 35px">#</th>
+                    <th style="width: 15%">Section</th>
+                    <th>Event Title</th>
+                    <th style="width: 12%">Event From</th>
+                    <th style="width: 12%">Event To</th>
+                    <th style="width: 10%">Event Type</th>
+                    <th style="width: 10%">Event Group</th>
+                    <th style="width: 80px"></th>
+                  </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+              </table>
+            </div>
+            <div class="summary-row" id="summary-row"></div>
+          </div>
+        </div>
+        <!-- /right-col -->
+      </div>
+      <!-- /main-grid -->
+
+      <footer class="note">
+        <p>Catatan</p>
+        <ul>
+          <li><strong>Bulk:</strong> Paste tanggal + nama kegiatan (satu baris per event), pilih bulan &amp; tahun, lalu klik Tambahkan.</li>
+          <li>Event type default <code>event</code>, event group default <code>all</code> (untuk bulk).</li>
+          <li>Gunakan tombol Export untuk mengunduh dalam format CSV atau XLSX.</li>
+        </ul>
+      </footer>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="modal-overlay" id="bulk-preview-modal" style="display: none">
+      <div class="modal">
+        <div class="modal-header">
+          <div>
+            <h2 style="white-space: nowrap"><span id="bulk-preview-title">Preview Event</span> <span style="color: var(--muted); font-weight: 400">•</span> <span id="bulk-preview-section"></span> <span id="bulk-preview-date" style="color: var(--muted); font-weight: 400"></span></h2>
+            <p id="bulk-preview-count"></p>
+          </div>
+          <div class="btn-group">
+            <button class="btn-success" id="btn-bulk-confirm">+ Tambah</button>
+            <button id="btn-bulk-cancel">Batal</button>
+          </div>
+        </div>
+        <div class="table-wrap" style="max-height: 60vh">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 35px">#</th>
+                <th>Event Title</th>
+                <th>From</th>
+                <th>To</th>
+                <th style="width: 100px">Type</th>
+                <th style="width: 100px">Group</th>
+                <th style="width: 60px"></th>
+              </tr>
+            </thead>
+            <tbody id="bulk-preview-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- Periode Modal -->
+    <div class="modal-overlay" id="periode-modal" style="display: none">
+      <div class="modal" style="max-width: 600px">
+        <div class="modal-header">
+          <div>
+            <h2>Periode</h2>
+            <p>Jarak waktu antar tanggal event</p>
+          </div>
+          <div class="btn-group">
+            <button id="btn-periode-close">Tutup</button>
+          </div>
+        </div>
+        <div id="periode-list" style="display: flex; flex-direction: column; gap: 3px; align-items: flex-start; max-height: 60vh; overflow-y: auto"></div>
+      </div>
+    </div>
+
+    <script src="confirm.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        const MONTHS_NAME = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+        let events = []; // { id, section, title, dateFrom, dateTo, eventType, eventGroup }
+        let nextId = 1;
+        let searchQuery = "";
+        let lastAddMonth = "";
+        let typeFilter = "all"; // "all" | "event" | "holiday"
+
+        /* ── Toast ── */
+        function showToast(msg, err) {
+          const c = document.getElementById("toast-container");
+          const t = document.createElement("div");
+          t.className = "toast" + (err ? " error" : "");
+          t.textContent = msg;
+          c.appendChild(t);
+          requestAnimationFrame(() => t.classList.add("show"));
+          setTimeout(() => {
+            t.classList.remove("show");
+            setTimeout(() => t.remove(), 220);
+          }, 2200);
+        }
+
+        /* ── Theme ── */
+        (function () {
+          const root = document.documentElement,
+            toggle = document.getElementById("theme-toggle"),
+            label = document.getElementById("theme-label"),
+            sun = toggle.querySelector(".icon-sun"),
+            moon = toggle.querySelector(".icon-moon");
+          function apply(theme) {
+            root.setAttribute("data-theme", theme);
+            if (theme === "light") {
+              sun.style.display = "none";
+              moon.style.display = "inline";
+              label.textContent = "Mode Gelap";
+            } else {
+              sun.style.display = "inline";
+              moon.style.display = "none";
+              label.textContent = "Mode Terang";
+            }
+            try {
+              localStorage.setItem("theme", theme);
+            } catch (e) {}
+          }
+          let s;
+          try {
+            s = localStorage.getItem("theme");
+          } catch (e) {}
+          apply(s || "dark");
+          toggle.addEventListener("click", () => {
+            toggle.classList.remove("is-switching");
+            void toggle.offsetWidth;
+            toggle.classList.add("is-switching");
+            apply(root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+            toggle.blur();
+          });
+        })();
+
+        /* ── Populate year dropdown & auto-select current month/year ── */
+        (function () {
+          const now = new Date();
+          const curMonth = now.getMonth() + 1; // 1-12
+          const curYear = now.getFullYear();
+          const selYear = document.getElementById("bulk-year");
+          for (let y = 2025; y <= 2100; y++) {
+            const opt = document.createElement("option");
+            opt.value = y;
+            opt.textContent = y;
+            if (y === curYear) opt.selected = true;
+            selYear.appendChild(opt);
+          }
+          // Auto-select current month
+          const selMonth = document.getElementById("bulk-month");
+          selMonth.value = curMonth;
+        })();
+
+        /* ── Holidays Database (Indonesia 2025-2030) ── */
+        function getHolidays(month, year) {
+          // Fixed holidays (month-day key)
+          const fixed = {
+            "1-1": "Tahun Baru",
+            "5-1": "Hari Buruh",
+            "6-1": "Hari Lahir Pancasila",
+            "8-17": "Hari Kemerdekaan RI",
+            "12-25": "Hari Natal",
+          };
+          // Islamic holidays (approximate dates by year)
+          const islamic = {
+            2025: { "3-1": "Isra Mi'raj", "3-29": "Tahun Baru Islam", "3-30": "Hari Raya Nyepi", "4-29": "Hari Buruh Kinestetik", "5-12": "Waisak", "5-13": "Kenaikan Yesus Kristus", "5-14": "Hari Raya Waisak", "6-7": "Idul Adha", "7-27": "Tahun Baru Hijriyah", "9-5": "Maulid Nabi", "1-29": "Tahun Baru Imlek" },
+            2026: { "2-17": "Isra Mi'raj", "2-18": "Tahun Baru Imlek", "3-19": "Hari Raya Nyepi", "4-3": "Waisak", "4-21": "Kenaikan Yesus Kristus", "5-27": "Idul Adha", "6-17": "Tahun Baru Hijriyah", "8-15": "Maulid Nabi" },
+            2027: { "2-6": "Tahun Baru Imlek", "2-7": "Isra Mi'raj", "3-8": "Hari Raya Nyepi", "3-23": "Waisak", "4-16": "Kenaikan Yesus Kristus", "5-17": "Idul Adha", "6-6": "Tahun Baru Hijriyah", "8-5": "Maulid Nabi" },
+            2028: { "1-26": "Tahun Baru Imlek", "1-27": "Isra Mi'raj", "2-26": "Hari Raya Nyepi", "3-12": "Waisak", "5-5": "Kenaikan Yesus Kristus", "5-6": "Idul Adha", "5-26": "Tahun Baru Hijriyah", "7-24": "Maulid Nabi" },
+            2029: { "2-13": "Tahun Baru Imlek", "2-15": "Isra Mi'raj", "3-17": "Hari Raya Nyepi", "3-31": "Waisak", "4-24": "Kenaikan Yesus Kristus", "4-25": "Idul Adha", "5-15": "Tahun Baru Hijriyah", "7-14": "Maulid Nabi" },
+            2030: { "2-3": "Tahun Baru Imlek", "2-5": "Isra Mi'raj", "3-7": "Hari Raya Nyepi", "3-21": "Waisak", "4-14": "Kenaikan Yesus Kristus", "5-14": "Idul Adha", "5-4": "Tahun Baru Hijriyah", "7-3": "Maulid Nabi" },
+          };
+          const holidays = {};
+          // Add fixed holidays
+          for (const [key, name] of Object.entries(fixed)) {
+            const [m, d] = key.split("-").map(Number);
+            if (m === month) holidays[d] = name;
+          }
+          // Add Islamic holidays for the year
+          if (islamic[year]) {
+            for (const [key, name] of Object.entries(islamic[year])) {
+              const [m, d] = key.split("-").map(Number);
+              if (m === month) holidays[d] = name;
+            }
+          }
+          return holidays;
+        }
+
+        /* ── Enter unfocus table inputs ── */
+        document.getElementById("bulk-preview-body").addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && e.target.classList.contains("tbl-edit")) {
+            e.preventDefault();
+            e.target.blur();
+          }
+        });
+        document.getElementById("table-body").addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && e.target.classList.contains("tbl-edit")) {
+            e.preventDefault();
+            e.target.blur();
+          }
+        });
+
+        /* ── Bulk Preview State ── */
+        let bulkPreview = []; // temporary events before confirm
+        let bulkSection = "";
+        let bulkMonth = 0;
+        let bulkYear = 0;
+
+        /* ── Bulk Preview ── */
+        document.getElementById("btn-bulk-preview").addEventListener("click", () => {
+          const text = document.getElementById("bulk-text").value.trim();
+          if (!text) {
+            showToast("Paste tanggal & nama kegiatan terlebih dahulu", true);
+            return;
+          }
+          const month = parseInt(document.getElementById("bulk-month").value);
+          const year = parseInt(document.getElementById("bulk-year").value);
+          const section = document.getElementById("bulk-section").value.trim();
+          if (!section) {
+            showToast("Section harus diisi", true);
+            return;
+          }
+          bulkSection = section;
+          bulkMonth = month;
+          bulkYear = year;
+          const lines = text.split("\n").filter((l) => l.trim());
+          bulkPreview = [];
+
+          // English month name map
+          const EN_MONTHS = { january: 1, february: 2, march: 3, april: 4, may: 5, june: 6, july: 7, august: 8, september: 9, october: 10, november: 11, december: 12, jan: 1, feb: 2, mar: 3, apr: 4, jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12 };
+
+          function parseFullDate(str) {
+            // "21 July 2025" or "5 September 2025"
+            const m = str.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+            if (m) {
+              const mon = EN_MONTHS[m[2].toLowerCase()];
+              if (mon) return { day: parseInt(m[1]), month: mon, year: parseInt(m[3]) };
+            }
+            // "1 - 12 Sept 2025" (same year range)
+            const mr = str.match(/^(\d{1,2})\s*[-–]\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+            if (mr) {
+              const mon = EN_MONTHS[mr[3].toLowerCase()];
+              if (mon) return { day1: parseInt(mr[1]), day2: parseInt(mr[2]), month: mon, year: parseInt(mr[4]), isRange: true };
+            }
+            // "18 Dec 26 - 4 Jan 27" (cross-year range, 2-digit year each)
+            const mx = str.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{2})\s*[-–]\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{2})$/);
+            if (mx) {
+              const mon1 = EN_MONTHS[mx[2].toLowerCase()];
+              const mon2 = EN_MONTHS[mx[5].toLowerCase()];
+              if (mon1 && mon2) {
+                const y1 = parseInt(mx[3]) < 100 ? 2000 + parseInt(mx[3]) : parseInt(mx[3]);
+                const y2 = parseInt(mx[6]) < 100 ? 2000 + parseInt(mx[6]) : parseInt(mx[6]);
+                return { day1: parseInt(mx[1]), day2: parseInt(mx[4]), month1: mon1, month2: mon2, year1: y1, year2: y2, isCrossYear: true };
+              }
+            }
+            // "22 Feb - 5 Mar 2027" (same-year range, year at end)
+            const ms = str.match(/^(\d{1,2})\s+([A-Za-z]+)\s*[-–]\s*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+            if (ms) {
+              const mon1 = EN_MONTHS[ms[2].toLowerCase()];
+              const mon2 = EN_MONTHS[ms[4].toLowerCase()];
+              if (mon1 && mon2) {
+                return { day1: parseInt(ms[1]), day2: parseInt(ms[3]), month1: mon1, month2: mon2, year1: parseInt(ms[5]), year2: parseInt(ms[5]), isCrossYear: true };
+              }
+            }
+            return null;
+          }
+
+          for (const line of lines) {
+            let parts = line.split(/\t/);
+            if (parts.length < 2) parts = line.split(/\|/);
+            if (parts.length < 2) {
+              const ci = line.indexOf(":");
+              if (ci > 0) parts = [line.substring(0, ci), line.substring(ci + 1)];
+            }
+            if (parts.length < 2) continue;
+
+            // Strip leading bullet (• · ●) so "• 6-10" parses as "6-10"
+            const dateStr = parts[0].trim().replace(/^[•·●]+\s*/, "");
+            const title = parts
+              .slice(1)
+              .join(" ")
+              .trim()
+              .replace(/^[:\s]+/, "")
+              .replace(/:{2,}/g, " ")
+              .replace(/\s+/g, " ")
+              .trim();
+            if (!dateStr || !title) continue;
+
+            // Try full date format first: "21 July 2025", "1 - 12 Sept 2025", "18 Dec 26 - 4 Jan 27"
+            const fullDate = parseFullDate(dateStr);
+            if (fullDate) {
+              if (fullDate.isCrossYear) {
+                bulkPreview.push({ id: nextId++, section, title, dateFrom: fmtDate(fullDate.day1, fullDate.month1, fullDate.year1), dateTo: fmtDate(fullDate.day2, fullDate.month2, fullDate.year2), eventType: "event", eventGroup: "all" });
+              } else if (fullDate.isRange) {
+                bulkPreview.push({ id: nextId++, section, title, dateFrom: fmtDate(fullDate.day1, fullDate.month, fullDate.year), dateTo: fmtDate(fullDate.day2, fullDate.month, fullDate.year), eventType: "event", eventGroup: "all" });
+              } else {
+                bulkPreview.push({ id: nextId++, section, title, dateFrom: fmtDate(fullDate.day, fullDate.month, fullDate.year), dateTo: fmtDate(fullDate.day, fullDate.month, fullDate.year), eventType: "event", eventGroup: "all" });
+              }
+              continue;
+            }
+
+            // Expand: comma-separated "5, 7, 10" -> individual dates
+            if (dateStr.includes(",")) {
+              const days = dateStr
+                .split(",")
+                .map((s) => parseInt(s.trim().replace(/\.0+$/, "")))
+                .filter((d) => d >= 1 && d <= 31);
+              for (const d of days) {
+                bulkPreview.push({ id: nextId++, section, title, dateFrom: fmtDate(d, month, year), dateTo: fmtDate(d, month, year), eventType: "event", eventGroup: "all" });
+              }
+            }
+            // Expand: range "6-7" or "19 to 28" -> from/to
+            else if (/^(\d{1,2})\s*(?:[-–]|\bto\b)\s*(\d{1,2})$/i.test(dateStr)) {
+              const rm = dateStr.match(/^(\d{1,2})\s*(?:[-–]|\bto\b)\s*(\d{1,2})$/i);
+              const d1 = parseInt(rm[1]),
+                d2 = parseInt(rm[2]);
+              bulkPreview.push({ id: nextId++, section, title, dateFrom: fmtDate(d1, month, year), dateTo: fmtDate(d2, month, year), eventType: "event", eventGroup: "all" });
+            }
+            // Single date
+            else {
+              const d = parseInt(dateStr.replace(/\.0+$/, ""));
+              if (isNaN(d) || d < 1 || d > 31) continue;
+              bulkPreview.push({ id: nextId++, section, title, dateFrom: fmtDate(d, month, year), dateTo: fmtDate(d, month, year), eventType: "event", eventGroup: "all" });
+            }
+          }
+
+          if (bulkPreview.length === 0) {
+            showToast("Tidak ada event yang bisa diproses. Periksa format.", true);
+            return;
+          }
+
+          // Auto-detect holidays: if event dateFrom falls on a known holiday, set type to holiday
+          const holidays = getHolidays(month, year);
+          let holidayCount = 0;
+          for (const ev of bulkPreview) {
+            const day = parseInt(ev.dateFrom.split("/")[0]);
+            if (holidays[day] && ev.eventType !== "holiday") {
+              ev.eventType = "holiday";
+              holidayCount++;
+            }
+          }
+          if (holidayCount > 0) {
+            showToast(holidayCount + " hari libur terdeteksi otomatis");
+          }
+
+          document.getElementById("bulk-preview-modal").style.display = "flex";
+          renderBulkPreview();
+          document.getElementById("btn-bulk-confirm").focus();
+        });
+
+        /* ── Render Bulk Preview ── */
+        function dateDisplayHtml(val) {
+          const v = val || "";
+          const parts = v.split("/");
+          if (parts.length === 3) return '<span class="dd">' + esc(parts[0]) + '</span><span class="rest">/' + esc(parts[1]) + "/" + esc(parts[2]) + "</span>";
+          return esc(v);
+        }
+
+        function renderBulkPreview() {
+          document.getElementById("bulk-preview-count").textContent = bulkPreview.length + " event akan ditambahkan";
+          document.getElementById("bulk-preview-section").textContent = bulkSection;
+          document.getElementById("bulk-preview-date").textContent = " • " + MONTHS_NAME[bulkMonth - 1] + " " + bulkYear;
+          const tbody = document.getElementById("bulk-preview-body");
+          tbody.innerHTML = bulkPreview
+            .map(
+              (e, i) => `<tr class="${e.eventType === "holiday" ? "ev-holiday" : "ev-event"}">
+          <td style="color:var(--muted)">${i + 1}</td>
+          <td><input class="tbl-edit" data-idx="${i}" data-field="title" value="${esc(e.title)}" /></td>
+          <td><span class="tbl-date-wrap"><span class="tbl-date-display" data-idx="${i}" data-field="dateFrom">${dateDisplayHtml(e.dateFrom)}</span><input class="tbl-edit tbl-date" data-idx="${i}" data-field="dateFrom" value="${esc(e.dateFrom)}" /></span></td>
+          <td><span class="tbl-date-wrap"><span class="tbl-date-display" data-idx="${i}" data-field="dateTo">${dateDisplayHtml(e.dateTo)}</span><input class="tbl-edit tbl-date" data-idx="${i}" data-field="dateTo" value="${esc(e.dateTo)}" /></span></td>
+          <td><select class="tbl-select" data-idx="${i}" data-field="eventType"><option value="event"${e.eventType === "event" ? " selected" : ""}>Event</option><option value="holiday"${e.eventType === "holiday" ? " selected" : ""}>Holiday</option></select></td>
+          <td><select class="tbl-select" data-idx="${i}" data-field="eventGroup"><option value="all"${e.eventGroup === "all" ? " selected" : ""}>All</option><option value="staff"${e.eventGroup === "staff" ? " selected" : ""}>Staff</option><option value="non-staff"${e.eventGroup === "non-staff" ? " selected" : ""}>Non-Staff</option></select></td>
+          <td><button class="btn-danger btn-sm" data-pdel="${i}">&#10005;</button></td>
+        </tr>`,
+            )
+            .join("");
+
+          // Inline edit
+          tbody.querySelectorAll(".tbl-edit").forEach((inp) => {
+            inp.addEventListener("change", () => {
+              const i = parseInt(inp.dataset.idx);
+              const field = inp.dataset.field;
+              if (field === "dateFrom" || field === "dateTo") {
+                // Expand range "19 - 28" / "19 to 28" into from/to (month/year from existing date)
+                const rm = inp.value.match(/^(\d{1,2})\s*(?:[-–]|\bto\b)\s*(\d{1,2})$/i);
+                if (rm) {
+                  const base = bulkPreview[i];
+                  const m = (base.dateFrom.match(/^\d{1,2}\/(\d{1,2})\/(\d{4})/) || base.dateTo.match(/^\d{1,2}\/(\d{1,2})\/(\d{4})/));
+                  const mon = m ? m[1] : bulkMonth;
+                  const yr = m ? m[2] : bulkYear;
+                  base.dateFrom = fmtDate(parseInt(rm[1]), mon, yr);
+                  base.dateTo = fmtDate(parseInt(rm[2]), mon, yr);
+                  renderBulkPreview();
+                  return;
+                }
+              }
+              bulkPreview[i][field] = inp.value;
+            });
+            // Blur hides input, shows span again
+            inp.addEventListener("blur", () => {
+              const wrap = inp.closest(".tbl-date-wrap");
+              if (wrap) {
+                wrap.classList.remove("editing");
+                const span = wrap.querySelector(".tbl-date-display");
+                if (span) span.innerHTML = dateDisplayHtml(inp.value);
+              }
+            });
+          });
+          // Date display click -> show input
+          tbody.querySelectorAll(".tbl-date-display").forEach((span) => {
+            span.addEventListener("click", () => {
+              const wrap = span.closest(".tbl-date-wrap");
+              wrap.classList.add("editing");
+              const inp = wrap.querySelector(".tbl-date");
+              inp.focus();
+              inp.select();
+            });
+          });
+          tbody.querySelectorAll(".tbl-select").forEach((sel) => {
+            sel.addEventListener("change", () => {
+              bulkPreview[parseInt(sel.dataset.idx)][sel.dataset.field] = sel.value;
+              renderBulkPreview();
+            });
+          });
+          tbody.querySelectorAll("[data-pdel]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              bulkPreview.splice(parseInt(btn.dataset.pdel), 1);
+              renderBulkPreview();
+            });
+          });
+        }
+
+        /* ── Bulk Confirm ── */
+        document.getElementById("btn-bulk-confirm").addEventListener("click", () => {
+          events.push(...bulkPreview);
+          showToast(bulkPreview.length + " event berhasil ditambahkan");
+          bulkPreview = [];
+          document.getElementById("bulk-preview-modal").style.display = "none";
+          document.getElementById("bulk-text").value = "";
+          // Capture month name before advancing
+          const mSel = document.getElementById("bulk-month");
+          const ySel = document.getElementById("bulk-year");
+          const m = parseInt(mSel.value);
+          lastAddMonth = MONTHS_NAME[m - 1];
+          renderTable();
+          if (m === 12) {
+            mSel.value = "1";
+            ySel.value = String(parseInt(ySel.value) + 1);
+          } else {
+            mSel.value = String(m + 1);
+          }
+          document.getElementById("bulk-text").focus();
+        });
+
+        /* ── Bulk Cancel ── */
+        document.getElementById("btn-bulk-cancel").addEventListener("click", () => {
+          bulkPreview = [];
+          document.getElementById("bulk-preview-modal").style.display = "none";
+        });
+
+        document.getElementById("btn-bulk-clear").addEventListener("click", () => {
+          document.getElementById("bulk-text").value = "";
+        });
+
+        // Ctrl+Enter on textarea triggers preview
+        document.getElementById("bulk-text").addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            document.getElementById("btn-bulk-preview").click();
+          }
+        });
+
+        // Enter on section input triggers preview
+        document.getElementById("bulk-section").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            document.getElementById("btn-bulk-preview").click();
+          }
+        });
+
+        // Ctrl+Enter on preview modal confirms add
+        document.getElementById("bulk-preview-modal").addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            document.getElementById("btn-bulk-confirm").click();
+          }
+        });
+
+        /* ── Helpers ── */
+        function fmtDate(day, month, year) {
+          return String(day).padStart(2, "0") + "/" + String(month).padStart(2, "0") + "/" + year;
+        }
+
+        function esc(s) {
+          const d = document.createElement("div");
+          d.textContent = s;
+          return d.innerHTML;
+        }
+
+        /* ── Filtered events helper ── */
+        function getFilteredEvents() {
+          const q = searchQuery.toLowerCase();
+          let filtered = events;
+          if (typeFilter !== "all") filtered = filtered.filter((e) => e.eventType === typeFilter);
+          if (q) filtered = filtered.filter((e) => (e.section + " " + e.title + " " + e.dateFrom + " " + e.dateTo + " " + e.eventType + " " + e.eventGroup).toLowerCase().includes(q));
+          return filtered;
+        }
+
+        /* ── Render ── */
+        function renderTable() {
+          const tbody = document.getElementById("table-body");
+          const q = searchQuery.toLowerCase();
+          const filtered = getFilteredEvents();
+          const subtitleBase = (q ? filtered.length + "/" : "") + events.length + " Event";
+          let dateRangeInfo = "";
+          if (events.length > 0) {
+            const allDates = events.map((e) => parseDateVal(e.dateFrom)).filter(Boolean).sort((a, b) => a - b);
+            if (allDates.length > 0) {
+              dateRangeInfo = ' <span class="text-muted">·</span> ' + fmtPeriodeDateShort(allDates[0]) + " - " + fmtPeriodeDateShort(allDates[allDates.length - 1]);
+            }
+          }
+          const monthInfo = lastAddMonth ? ' <span class="text-muted">•</span> Event ditambahkan sebelumnya bulan <span class="badge badge-event">' + esc(lastAddMonth) + "</span>" : "";
+          document.getElementById("table-subtitle").innerHTML = subtitleBase + dateRangeInfo + monthInfo;
+
+          if (filtered.length === 0) {
+            tbody.innerHTML = q ? '<tr><td colspan="8" class="empty-state">Tidak ada event cocok dengan pencarian.</td></tr>' : '<tr><td colspan="8" class="empty-state">Belum ada event. Tambahkan melalui bulk paste.</td></tr>';
+            document.getElementById("summary-row").innerHTML = "";
+            return;
+          }
+
+          tbody.innerHTML = filtered
+            .map((e, i) => {
+              const rowCls = e.eventType === "holiday" ? "ev-holiday" : "ev-event";
+              return `<tr class="${rowCls}">
+            <td style="color:var(--muted)">${i + 1}</td>
+            <td><input class="tbl-edit" data-id="${e.id}" data-field="section" value="${esc(e.section)}" /></td>
+            <td><input class="tbl-edit" data-id="${e.id}" data-field="title" value="${esc(e.title)}" /></td>
+            <td><span class="tbl-date-wrap"><span class="tbl-date-display" data-id="${e.id}" data-field="dateFrom">${dateDisplayHtml(e.dateFrom)}</span><input class="tbl-edit tbl-date" data-id="${e.id}" data-field="dateFrom" value="${esc(e.dateFrom)}" /></span></td>
+            <td><span class="tbl-date-wrap"><span class="tbl-date-display" data-id="${e.id}" data-field="dateTo">${dateDisplayHtml(e.dateTo)}</span><input class="tbl-edit tbl-date" data-id="${e.id}" data-field="dateTo" value="${esc(e.dateTo)}" /></span></td>
+            <td><select class="tbl-select" data-id="${e.id}" data-field="eventType">
+              <option value="event"${e.eventType === "event" ? " selected" : ""}>Event</option>
+              <option value="holiday"${e.eventType === "holiday" ? " selected" : ""}>Holiday</option>
+            </select></td>
+            <td><select class="tbl-select" data-id="${e.id}" data-field="eventGroup">
+              <option value="all"${e.eventGroup === "all" ? " selected" : ""}>All</option>
+              <option value="staff"${e.eventGroup === "staff" ? " selected" : ""}>Staff</option>
+              <option value="non-staff"${e.eventGroup === "non-staff" ? " selected" : ""}>Non-Staff</option>
+            </select></td>
+            <td><button class="btn-danger btn-sm" data-del="${e.id}">Hapus</button></td>
+          </tr>`;
+            })
+            .join("");
+
+          // Inline edit: input fields
+          tbody.querySelectorAll(".tbl-edit").forEach((inp) => {
+            inp.addEventListener("change", () => {
+              const id = parseInt(inp.dataset.id);
+              const field = inp.dataset.field;
+              const ev = events.find((e) => e.id === id);
+              if (ev) ev[field] = inp.value;
+            });
+            inp.addEventListener("blur", () => {
+              const wrap = inp.closest(".tbl-date-wrap");
+              if (wrap) {
+                wrap.classList.remove("editing");
+                const span = wrap.querySelector(".tbl-date-display");
+                if (span) span.innerHTML = dateDisplayHtml(inp.value);
+              }
+            });
+          });
+          // Date display click -> show input
+          tbody.querySelectorAll(".tbl-date-display").forEach((span) => {
+            span.addEventListener("click", () => {
+              const wrap = span.closest(".tbl-date-wrap");
+              wrap.classList.add("editing");
+              const inp = wrap.querySelector(".tbl-date");
+              inp.focus();
+              inp.select();
+            });
+          });
+
+          // Inline edit: select fields
+          tbody.querySelectorAll(".tbl-select").forEach((sel) => {
+            sel.addEventListener("change", () => {
+              const id = parseInt(sel.dataset.id);
+              const field = sel.dataset.field;
+              const ev = events.find((e) => e.id === id);
+              if (ev) ev[field] = sel.value;
+              renderTable();
+            });
+          });
+
+          // Delete handlers
+          tbody.querySelectorAll("[data-del]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const id = parseInt(btn.dataset.del);
+              events = events.filter((e) => e.id !== id);
+              renderTable();
+              showToast("Event dihapus");
+            });
+          });
+
+          // Summary
+          const ec = filtered.filter((e) => e.eventType === "event").length;
+          const hc = filtered.filter((e) => e.eventType === "holiday").length;
+          document.getElementById("summary-row").innerHTML = `
+          <div class="summary-item"><strong>${filtered.length}</strong> Total</div>
+          <div class="summary-item"><strong>${ec}</strong> Event</div>
+          <div class="summary-item"><strong>${hc}</strong> Holiday</div>
+        `;
+        }
+
+        /* ── Delete All ── */
+        document.getElementById("btn-delete-all").addEventListener("click", async () => {
+          if (events.length === 0) return;
+          if (!await showConfirm("Hapus semua " + events.length + " event?")) return;
+          events = [];
+          renderTable();
+          showToast("Semua event dihapus");
+        });
+
+        /* ── Salin Semua (Tab-separated) ── */
+        document.getElementById("btn-copy-all").addEventListener("click", () => {
+          if (!events.length) {
+            showToast("Tidak ada data untuk disalin", true);
+            return;
+          }
+          const rows = events.map((e) => [e.section, "", e.title, "", e.dateFrom, e.dateTo, e.eventType, e.eventGroup].join("\t"));
+          navigator.clipboard
+            .writeText(rows.join("\n"))
+            .then(() => {
+              showToast(events.length + " event berhasil disalin");
+            })
+            .catch(() => {
+              showToast("Gagal menyalin", true);
+            });
+        });
+
+        /* ── Import File ── */
+        document.getElementById("btn-import-file").addEventListener("click", () => {
+          document.getElementById("import-file-input").click();
+        });
+
+        document.getElementById("import-file-input").addEventListener("change", (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const ext = file.name.split(".").pop().toLowerCase();
+          const reader = new FileReader();
+
+          reader.onload = (ev) => {
+            try {
+              let rows = [];
+              if (ext === "csv") {
+                const lines = ev.target.result.split("\n").filter((l) => l.trim());
+                if (!lines.length) { showToast("File kosong", true); return; }
+                const delim = lines[0].includes("\t") ? "\t" : lines[0].includes(";") ? ";" : ",";
+                rows = lines.map((l) => l.split(delim).map((c) => c.trim().replace(/^[""]|[""]$/g, "")));
+              } else {
+                const wb = XLSX.read(ev.target.result, { type: "array" });
+                const sheetName = wb.SheetNames.find((n) => n.toLowerCase() === "events") || wb.SheetNames[0];
+                rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1 }).map((r) => r.map((c) => String(c ?? "").trim()));
+              }
+              if (rows.length < 2) { showToast("Tidak ada data baris", true); return; }
+
+              // Map header columns
+              const hdr = rows[0].map((h) => h.toLowerCase());
+              const col = {};
+              const alias = { section: ["section"], title: ["title", "event title", "nama", "kegiatan", "event"], datefrom: ["datefrom", "date from", "event from", "from", "dari"], dateto: ["dateto", "date to", "event to", "to", "sampai"], eventtype: ["eventtype", "event type", "type", "tipe"], eventgroup: ["eventgroup", "event group", "group", "kelompok"] };
+              hdr.forEach((h, i) => { for (const [k, v] of Object.entries(alias)) { if (v.includes(h)) { col[k] = i; break; } } });
+
+              const imported = [];
+              for (let i = 1; i < rows.length; i++) {
+                const r = rows[i];
+                const title = col.title != null ? r[col.title] : "";
+                let df = col.datefrom != null ? r[col.datefrom] : "";
+                let dt = col.dateto != null ? r[col.dateto] : "";
+                if (!title || !df) continue;
+                df = normDate(df);
+                dt = dt ? normDate(dt) : df;
+                imported.push({
+                  id: nextId++,
+                  section: col.section != null ? r[col.section] : "",
+                  title,
+                  dateFrom: df,
+                  dateTo: dt,
+                  eventType: (col.eventtype != null ? r[col.eventtype] : "") || "event",
+                  eventGroup: (col.eventgroup != null ? r[col.eventgroup] : "") || "all",
+                });
+              }
+              if (!imported.length) { showToast("Tidak ada data valid ditemukan", true); return; }
+              if (!await showConfirm("Import akan menghapus " + events.length + " event yang ada. Lanjutkan?")) return;
+              events = imported;
+              renderTable();
+              showToast(imported.length + " event berhasil diimport");
+            } catch (err) {
+              showToast("Gagal baca file: " + err.message, true);
+            }
+          };
+
+          if (ext === "csv") reader.readAsText(file);
+          else reader.readAsArrayBuffer(file);
+          e.target.value = "";
+        });
+
+        function normDate(s) {
+          s = String(s).trim();
+          const iso = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+          if (iso) return fmtDate(parseInt(iso[3]), parseInt(iso[2]), parseInt(iso[1]));
+          const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+          if (dmy) return fmtDate(parseInt(dmy[1]), parseInt(dmy[2]), parseInt(dmy[3]));
+          const num = Number(s);
+          if (!isNaN(num) && num > 40000 && num < 60000) {
+            const d = new Date((num - 25569) * 86400 * 1000);
+            return fmtDate(d.getUTCDate(), d.getUTCMonth() + 1, d.getUTCFullYear());
+          }
+          return s;
+        }
+
+        /* ── Search ── */
+        document.getElementById("event-search").addEventListener("input", (e) => {
+          searchQuery = e.target.value;
+          renderTable();
+        });
+
+        /* ── Type Filter ── */
+        function updateFilterBtns() {
+          ["all", "event", "holiday"].forEach((t) => {
+            const btn = document.getElementById("btn-filter-" + t);
+            btn.classList.toggle("btn-primary", typeFilter === t);
+          });
+        }
+        ["all", "event", "holiday"].forEach((t) => {
+          document.getElementById("btn-filter-" + t).addEventListener("click", () => {
+            typeFilter = t;
+            updateFilterBtns();
+            renderTable();
+          });
+        });
+
+        /* ── Periode ── */
+
+        function parseDateVal(s) {
+          if (!s) return null;
+          s = String(s).trim();
+          const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+          if (m) return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+          const m2 = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+          if (m2) return new Date(parseInt(m2[1]), parseInt(m2[2]) - 1, parseInt(m2[3]));
+          return null;
+        }
+
+        function fmtPeriodeDateShort(d) {
+          return String(d.getDate()).padStart(2, "0") + " " + MONTHS_NAME[d.getMonth()] + " " + d.getFullYear();
+        }
+
+        function addDays(d, n) {
+          const r = new Date(d);
+          r.setDate(r.getDate() + n);
+          return r;
+        }
+
+        function showPeriodeModal() {
+          const filtered = getFilteredEvents();
+          if (filtered.length === 0) { showToast("Belum ada event yang cocok", true); return; }
+          const dates = [...new Set(filtered.map((e) => e.dateFrom).filter(Boolean))];
+          const parsed = dates.map((d) => ({ raw: d, dt: parseDateVal(d) })).filter((x) => x.dt);
+          if (parsed.length === 0) { showToast("Tidak ada tanggal valid", true); return; }
+          parsed.sort((a, b) => a.dt - b.dt);
+
+          const periods = [];
+          for (let i = 0; i < parsed.length; i++) {
+            const date = parsed[i].dt;
+            const prevDate = i > 0 ? parsed[i - 1].dt : null;
+            const matched = filtered.filter((e) => {
+              const d = parseDateVal(e.dateFrom);
+              return d && d.getTime() === date.getTime();
+            });
+            const prevTitles = prevDate ? filtered.filter((e) => {
+              const d = parseDateVal(e.dateFrom);
+              return d && d.getTime() === prevDate.getTime();
+            }).map((e) => e.title) : [];
+            periods.push({ date, prevDate, count: matched.length, titles: matched.map((e) => e.title), prevTitles });
+          }
+
+          function fmtDmy(d) { return fmtDate(d.getDate(), d.getMonth() + 1, d.getFullYear()); }
+
+          const list = document.getElementById("periode-list");
+          list.innerHTML = periods.map((p, i) => {
+            const dateStr = fmtPeriodeDateShort(p.date);
+            let rightHtml = "";
+            if (p.prevDate) {
+              const leftDate = addDays(p.prevDate, 1);
+              const rightDate = p.date;
+              rightHtml = '<table class="periode-table" style="font-size: 0.75rem; color: var(--muted)">' +
+                '<tr><td class="pdate-cell" data-dmy="' + fmtDmy(leftDate) + '" style="white-space: nowrap; vertical-align: middle; cursor: pointer; padding: 1px 0">' + fmtPeriodeDateShort(leftDate) + '</td>' +
+                '<td style="padding: 0 8px; color: var(--muted); font-size: 0.75rem; text-align: center; vertical-align: middle">→</td>' +
+                '<td class="pdate-cell" data-dmy="' + fmtDmy(rightDate) + '" style="white-space: nowrap; vertical-align: middle; cursor: pointer; padding: 1px 0">' + fmtPeriodeDateShort(rightDate) + '</td></tr>' +
+                '<tr><td style="white-space: nowrap; vertical-align: middle; padding: 1px 0">' + p.prevTitles.join(", ") + '</td>' +
+                '<td style="padding: 0 8px; color: var(--muted); text-align: center; vertical-align: middle">→</td>' +
+                '<td style="white-space: nowrap; vertical-align: middle; padding: 1px 0">' + p.titles.join(", ") + ' <span style="font-size: 0.625rem; background: rgba(59,130,246,0.15); color: var(--primary); padding: 1px 6px; border-radius: 999px; font-weight: 600; vertical-align: middle; margin-left: 4px">Saat Ini</span></td></tr></table>';
+            } else {
+              rightHtml = '<div style="font-size: 0.6875rem; color: var(--muted)">' + p.titles.join(", ") + '</div>';
+            }
+            return '<div style="padding: 6px 0; display: flex; flex-direction: column; gap: 1px" data-pcopy="' + i + '" data-val="' + fmtDmy(p.date) + '">' +
+              '<div class="pdate-cell" data-dmy="' + fmtDmy(p.date) + '" style="font-size: 0.875rem; font-weight: 500; white-space: nowrap; cursor: pointer; padding: 1px 0">' + esc(dateStr) + '</div>' +
+              '<div>' + rightHtml + '</div></div>';
+          }).join("");
+
+          list.querySelectorAll(".pdate-cell").forEach((el) => {
+            el.addEventListener("click", (e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(el.dataset.dmy).then(() => showToast("Tersalin: " + el.dataset.dmy));
+            });
+          });
+
+          document.getElementById("periode-modal").style.display = "flex";
+        }
+
+        document.getElementById("btn-periode").addEventListener("click", showPeriodeModal);
+        document.getElementById("btn-periode-close").addEventListener("click", () => {
+          document.getElementById("periode-modal").style.display = "none";
+        });
+
+        /* ── Init ── */
+        renderTable();
+
+        /* ── Force layout via JS (fallback for CSS caching issues) ── */
+        function applyLayout() {
+          const grid = document.querySelector(".main-grid");
+          if (!grid) return;
+          if (window.innerWidth >= 900) {
+            grid.style.display = "grid";
+            grid.style.gridTemplateColumns = "400px 1fr";
+            grid.style.gap = "20px";
+            grid.style.alignItems = "start";
+          } else {
+            grid.style.display = "";
+            grid.style.gridTemplateColumns = "";
+            grid.style.gap = "";
+            grid.style.alignItems = "";
+          }
+        }
+        applyLayout();
+        window.addEventListener("resize", applyLayout);
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="shared.css" />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
+    <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <title>Username Maker</title>
+    <meta name="description" content="Buat username & email dari nama lengkap berdasarkan role dan prefix sekolah." />
+    <style>
+      .topbar-row { align-items: flex-start; }
+      .topbar { margin-bottom: 20px; }
+      /* Settings row */
+      .settings-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-end;
+        margin-bottom: 16px;
+      }
+      .field-prefix input {
+        width: 180px;
+      }
+      .field select {
+        width: auto;
+      }
+      /* Table */
+      .table-wrap {
+        margin: 0;
+      }
+      /* Column widths */
+      .col-no {
+        width: 36px;
+        text-align: center;
+      }
+      .col-nama {
+        width: 26%;
+        min-width: 0;
+      }
+      .col-prefix {
+        width: 12%;
+        min-width: 0;
+      }
+      .col-role {
+        width: 12%;
+        min-width: 0;
+      }
+      .col-depan {
+        width: 12%;
+        min-width: 0;
+      }
+      .col-belakang {
+        width: 18%;
+        min-width: 0;
+      }
+      .col-username {
+        width: 16%;
+        min-width: 0;
+      }
+      .col-email {
+        width: 18%;
+        min-width: 0;
+      }
+      .col-copy {
+        width: 54px;
+        text-align: center;
+        min-width: 54px;
+      }
+      .col-del {
+        width: 32px;
+        text-align: center;
+        min-width: 32px;
+      }
+      /* Editable cells */
+      td[contenteditable="true"] {
+        cursor: text;
+        outline: none;
+        transition: background 0.12s;
+      }
+      td[contenteditable="true"]:focus {
+        background: color-mix(in srgb, var(--primary) 10%, transparent);
+        box-shadow: inset 0 0 0 1.5px var(--primary);
+        border-radius: 3px;
+      }
+      /* Generated cells */
+      .generated {
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition:
+          background 0.12s,
+          color 0.12s;
+        user-select: all;
+        position: relative;
+      }
+      .generated:hover {
+        background: color-mix(in srgb, var(--primary) 10%, transparent);
+        color: var(--fg);
+      }
+      .generated:active {
+        background: color-mix(in srgb, var(--primary) 22%, transparent);
+      }
+      /* Role select in table */
+      .role-select {
+        appearance: none;
+        -webkit-appearance: none;
+        border: 1px solid var(--border);
+        background: var(--input);
+        color: var(--fg);
+        padding: 3px 22px 3px 6px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        outline: none;
+        width: 100%;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 4px center;
+      }
+      .role-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent);
+      }
+      /* Delete btn */
+      .btn-del {
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        padding: 2px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition:
+          color 0.15s,
+          background 0.15s;
+        line-height: 1;
+      }
+      .btn-del:hover {
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.1);
+      }
+      .btn-row-copy {
+        padding: 3px 8px;
+        border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+        color: var(--primary);
+        background: transparent;
+        transition:
+          background 0.15s,
+          color 0.15s,
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
+      .btn-row-copy:hover {
+        background: var(--primary);
+        color: var(--primary-fg);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px color-mix(in srgb, var(--primary) 28%, transparent);
+      }
+      .btn-row-copy.copied {
+        animation: row-copy-pop 0.28s ease;
+      }
+      @keyframes row-copy-pop {
+        0% {
+          transform: scale(1);
+        }
+        45% {
+          transform: scale(1.18);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      /* Output area */
+      textarea {
+        min-height: 80px;
+        background: var(--row-hover);
+      }
+      /* Search clear */
+      .search-wrap {
+        margin-bottom: 12px;
+      }
+      /* Mobile */
+      @media (max-width: 480px) {
+        .col-prefix,
+        .col-depan,
+        .col-belakang {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container view active">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Username Maker</h1>
+            <p class="subtitle">Masukkan nama lengkap, pilih role & prefix sekolah — username dan email otomatis dibuat.</p>
+          </div>
+          <div class="topbar-actions">
+          <a href="../Tools Hub.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Home</a>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span id="theme-label">Mode Terang</span>
+          </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings + Bulk Input -->
+      <div class="panel">
+        <div class="panel-title-row">
+          <h2>Pengaturan</h2>
+        </div>
+        <div class="settings-row">
+          <div class="field field-prefix">
+            <label for="prefix-input">Username Awal / Prefix</label>
+            <input type="text" id="prefix-input" placeholder="sbm" />
+          </div>
+          <div class="field field-prefix">
+            <label for="role-select-global">Role Default</label>
+            <select id="role-select-global">
+              <option value="teacher">Teacher</option>
+              <option value="student">Student</option>
+              <option value="parent">Parent</option>
+            </select>
+          </div>
+          <button id="btn-add" class="btn-primary">+ Tambah Baris</button>
+          <button id="btn-add-multi">+ Tambah Banyak</button>
+        </div>
+        <div id="bulk-panel" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+          <div class="panel-title-row" style="margin-bottom: 8px;">
+            <h2 style="font-size: 0.95rem;">Input Banyak (satu nama per baris)</h2>
+            <button id="btn-close-bulk">✕ Tutup</button>
+          </div>
+          <textarea id="bulk-input" placeholder="Masukkan nama lengkap, satu per baris..." style="min-height: 100px;"></textarea>
+          <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap">
+            <button id="btn-process-bulk" class="btn-primary">Proses</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="panel">
+        <div class="panel-title-row">
+          <h2>Data</h2>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap">
+            <button id="btn-copy-user" class="btn-success">Salin Username</button>
+            <button id="btn-copy-email">Salin Email</button>
+            <button id="btn-copy-all">Salin Semua</button>
+            <button id="btn-csv">Download CSV</button>
+            <button id="btn-clear-all">Hapus Semua</button>
+          </div>
+        </div>
+        <div class="search-wrap">
+          <input type="text" id="search-input" placeholder="Cari nama / username / email…" />
+          <button class="search-clear" id="search-clear" type="button" aria-label="Hapus pencarian">
+            <i class="fad fa-xmark"></i>
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-no">#</th>
+                <th class="col-nama">Nama Lengkap</th>
+                <th class="col-prefix">Prefix</th>
+                <th class="col-role">Role</th>
+                <th class="col-depan">Nama Depan</th>
+                <th class="col-belakang">Nama Belakang</th>
+                <th class="col-username">Username</th>
+                <th class="col-email">Email</th>
+                <th class="col-copy">Salin</th>
+                <th class="col-del"></th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top: 8px; font-size: 0.75rem; color: var(--muted)"><span id="row-count">0</span> baris</div>
+      </div>
+
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="theme.js"></script>
+    <script>
+      (function () {
+        // === Toast ===
+        function showToast(msg) {
+          const c = document.getElementById("toast-container");
+          const t = document.createElement("div");
+          t.className = "toast";
+          t.textContent = msg;
+          c.appendChild(t);
+          requestAnimationFrame(() => t.classList.add("show"));
+          setTimeout(() => {
+            t.classList.remove("show");
+            setTimeout(() => t.remove(), 220);
+          }, 2200);
+        }
+
+        // === Search clear with paper bits ===
+        const searchInput = document.getElementById("search-input");
+        const searchClear = document.getElementById("search-clear");
+        searchInput.addEventListener("input", () => {
+          searchClear.classList.toggle("visible", searchInput.value.length > 0);
+          render();
+        });
+        searchClear.addEventListener("click", () => {
+          const rect = searchInput.getBoundingClientRect();
+          const colors = ["var(--primary)", "var(--muted)", "var(--fg)", "var(--border)"];
+          for (let i = 0; i < 14; i++) {
+            const bit = document.createElement("div");
+            bit.className = "paper-bit";
+            const w = 4 + Math.random() * 18;
+            const h = 3 + Math.random() * 6;
+            bit.style.cssText = `left:${rect.left + Math.random() * rect.width}px;top:${rect.top + Math.random() * rect.height}px;width:${w}px;height:${h}px;background:${colors[i % colors.length]};--tx:${(Math.random() - 0.5) * 180}px;--ty:${-(40 + Math.random() * 120)}px;--rot:${(Math.random() - 0.5) * 540}deg;--sx:${0.2 + Math.random() * 0.5};--dur:${0.5 + Math.random() * 0.4}s;`;
+            document.body.appendChild(bit);
+            bit.addEventListener("animationend", () => bit.remove(), { once: true });
+          }
+          searchInput.value = "";
+          searchClear.classList.remove("visible");
+          searchInput.focus();
+          render();
+        });
+
+        // === Data ===
+        let rows = [];
+        let idCounter = 0;
+
+        // === Logic from Excel formulas ===
+        function getFirstName(fullName) {
+          const parts = fullName.trim().split(/\s+/);
+          return parts[0] || fullName;
+        }
+        function getLastName(fullName) {
+          const parts = fullName.trim().split(/\s+/);
+          if (parts.length <= 1) return "";
+          return parts.slice(1).join(" ");
+        }
+        function makeUsername(prefix, role, firstName, lastName) {
+          const p = role === "parent" ? prefix + "p" : prefix;
+          // remove dots from firstName
+          const fn = firstName.replace(/\./g, "");
+          // take first word of lastName (without comma), remove dots
+          const lnClean = lastName.replace(/,/g, "").trim();
+          const lnParts = lnClean.split(/\s+/);
+          const ln = lnParts[0] || "";
+          return (p + fn + ln).toLowerCase();
+        }
+        function makeEmail(prefix, role, firstName, lastName) {
+          const lnClean = lastName.replace(/,/g, "").trim();
+          const lnParts = lnClean.split(/\s+/);
+          const ln = lnParts[0] || "";
+          const namePart = [firstName, ln].filter(Boolean).join(".").toLowerCase().replace(/,|\s/g, "");
+          const domain = role === "parent" ? "@p." + prefix + ".sch.id" : "@" + prefix + ".sch.id";
+          return namePart + domain;
+        }
+
+        // === Render ===
+        function render() {
+          const tbody = document.getElementById("tbody");
+          const filter = searchInput.value.toLowerCase();
+          const prefixGlobal = document.getElementById("prefix-input").value.trim().toLowerCase();
+
+          // filter
+          const filtered = rows.filter((r) => {
+            if (!filter) return true;
+            const uname = makeUsername(r.prefix || prefixGlobal, r.role, getFirstName(r.name), getLastName(r.name));
+            const email = makeEmail(r.prefix || prefixGlobal, r.role, getFirstName(r.name), getLastName(r.name));
+            return r.name.toLowerCase().includes(filter) || uname.toLowerCase().includes(filter) || email.toLowerCase().includes(filter);
+          });
+
+          tbody.innerHTML = "";
+          filtered.forEach((r, i) => {
+            const tr = document.createElement("tr");
+            const prefix = r.prefix || prefixGlobal;
+            const fn = getFirstName(r.name);
+            const ln = getLastName(r.name);
+            const uname = makeUsername(prefix, r.role, fn, ln);
+            const email = makeEmail(prefix, r.role, fn, ln);
+
+            tr.innerHTML = `
+            <td class="col-no">${rows.indexOf(r) + 1}</td>
+            <td class="col-nama" contenteditable="true" data-field="name">${r.name}</td>
+            <td class="col-prefix" contenteditable="true" data-field="prefix">${r.prefix}</td>
+            <td class="col-role">
+              <select class="role-select" data-field="role">
+                <option value="teacher" ${r.role === "teacher" ? "selected" : ""}>Teacher</option>
+                <option value="student" ${r.role === "student" ? "selected" : ""}>Student</option>
+                <option value="parent" ${r.role === "parent" ? "selected" : ""}>Parent</option>
+              </select>
+            </td>
+            <td class="col-depan generated" data-copy="${fn}">${fn}</td>
+            <td class="col-belakang generated" data-copy="${ln}">${ln}</td>
+            <td class="col-username generated" data-copy="${uname}">${uname}</td>
+            <td class="col-email generated" data-copy="${email}">${email}</td>
+            <td class="col-copy"><button class="btn-row-copy" data-id="${r.id}" type="button">Salin</button></td>
+            <td class="col-del"><button class="btn-del" data-id="${r.id}" aria-label="Hapus">✕</button></td>
+          `;
+
+            function updateGeneratedCells() {
+              const prefixGlobal = document.getElementById("prefix-input").value.trim().toLowerCase();
+              const prefix = r.prefix || prefixGlobal;
+              const fn = getFirstName(r.name);
+              const ln = getLastName(r.name);
+              const uname = makeUsername(prefix, r.role, fn, ln);
+              const email = makeEmail(prefix, r.role, fn, ln);
+              const cells = tr.querySelectorAll(".generated");
+              [fn, ln, uname, email].forEach((value, index) => {
+                cells[index].textContent = value;
+                cells[index].dataset.copy = value;
+              });
+            }
+
+            // Edit name tanpa re-render supaya focus tidak lompat
+            tr.querySelector('[data-field="name"]').addEventListener("input", (e) => {
+              r.name = e.target.textContent;
+              updateGeneratedCells();
+            });
+            tr.querySelector('[data-field="name"]').addEventListener("keydown", (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.target.blur();
+              }
+            });
+            // Edit prefix tanpa re-render supaya focus tidak lompat
+            tr.querySelector('[data-field="prefix"]').addEventListener("input", (e) => {
+              r.prefix = e.target.textContent.trim().toLowerCase();
+              updateGeneratedCells();
+            });
+            tr.querySelector('[data-field="prefix"]').addEventListener("keydown", (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.target.blur();
+              }
+            });
+            // Role change
+            tr.querySelector(".role-select").addEventListener("change", (e) => {
+              r.role = e.target.value;
+              render();
+            });
+            // Copy row: Nama_Depan<TAB>Nama_Belakang<TAB>Username<TAB>Email<TAB>Username<TAB>Username
+            tr.querySelector(".btn-row-copy").addEventListener("click", (e) => {
+              e.stopPropagation();
+              const btn = e.currentTarget;
+              const prefixGlobal = document.getElementById("prefix-input").value.trim().toLowerCase();
+              const prefix = r.prefix || prefixGlobal;
+              const first = getFirstName(r.name);
+              const last = getLastName(r.name);
+              const username = makeUsername(prefix, r.role, first, last);
+              const email = makeEmail(prefix, r.role, first, last);
+              const data = [first, last, username, email, username, username].join("\t");
+              navigator.clipboard.writeText(data).then(() => {
+                btn.classList.remove("copied");
+                void btn.offsetWidth;
+                btn.classList.add("copied");
+                showToast("Baris disalin");
+              });
+            });
+
+            // Delete
+            tr.querySelector(".btn-del").addEventListener("click", (e) => {
+              e.stopPropagation();
+              const id = parseInt(e.currentTarget.dataset.id);
+              rows = rows.filter((r) => r.id !== id);
+              render();
+            });
+
+            tbody.appendChild(tr);
+          });
+          document.getElementById("row-count").textContent = rows.length;
+        }
+
+        // === Click to copy on generated cells ===
+        document.getElementById("tbody").addEventListener("click", (e) => {
+          const td = e.target.closest(".generated[data-copy]");
+          if (!td) return;
+          const val = td.dataset.copy.trim();
+          if (!val) {
+            showToast("Tidak ada yang disalin");
+            return;
+          }
+          navigator.clipboard.writeText(val).then(() => {
+            showToast(`Disalin: ${val}`);
+          });
+        });
+
+        // === Add row ===
+        function addRow(name, role) {
+          const prefixGlobal = document.getElementById("prefix-input").value.trim();
+          rows.push({
+            id: ++idCounter,
+            name: name || "",
+            prefix: prefixGlobal || "",
+            role: role || document.getElementById("role-select-global").value,
+          });
+        }
+
+        // === Buttons ===
+        document.getElementById("prefix-input").addEventListener("input", render);
+
+        document.getElementById("btn-add").addEventListener("click", () => {
+          addRow("", null);
+          render();
+          // focus the new name cell
+          const cells = document.querySelectorAll('.col-nama[contenteditable="true"]');
+          if (cells.length) {
+            const last = cells[cells.length - 1];
+            last.focus();
+            // scroll into view
+            last.closest("tr").scrollIntoView({ block: "nearest" });
+          }
+        });
+
+        document.getElementById("btn-add-multi").addEventListener("click", () => {
+          document.getElementById("bulk-panel").style.display = document.getElementById("bulk-panel").style.display === "none" ? "block" : "none";
+        });
+        document.getElementById("btn-close-bulk").addEventListener("click", () => {
+          document.getElementById("bulk-panel").style.display = "none";
+        });
+        document.getElementById("btn-process-bulk").addEventListener("click", () => {
+          const prefix = document.getElementById("prefix-input").value.trim();
+          if (!prefix) {
+            showToast("Username awal / prefix wajib diisi");
+            document.getElementById("prefix-input").focus();
+            return;
+          }
+          const text = document.getElementById("bulk-input").value;
+          const names = text
+            .split("\n")
+            .map((s) => s.trim())
+            .filter(Boolean);
+          if (names.length === 0) {
+            showToast("Tidak ada nama yang diproses");
+            return;
+          }
+          names.forEach((n) => addRow(n, null));
+          document.getElementById("bulk-input").value = "";
+          document.getElementById("bulk-panel").style.display = "none";
+          render();
+          showToast(`${names.length} baris ditambahkan`);
+        });
+
+        // Copy buttons
+        function getGeneratedData() {
+          const prefixGlobal = document.getElementById("prefix-input").value.trim().toLowerCase();
+          return rows.map((r) => {
+            const prefix = r.prefix || prefixGlobal;
+            const fn = getFirstName(r.name);
+            const ln = getLastName(r.name);
+            return {
+              name: r.name,
+              prefix,
+              role: r.role,
+              username: makeUsername(prefix, r.role, fn, ln),
+              email: makeEmail(prefix, r.role, fn, ln),
+            };
+          });
+        }
+        function copyToClipboard(text, msg) {
+          if (!text.trim()) {
+            showToast("Tidak ada yang disalin");
+            return;
+          }
+          navigator.clipboard.writeText(text).then(() => showToast(msg));
+        }
+
+        document.getElementById("btn-copy-user").addEventListener("click", () => {
+          const data = getGeneratedData().map((d) => d.username);
+          copyToClipboard(data.join("\n"), "Username disalin");
+        });
+        document.getElementById("btn-copy-email").addEventListener("click", () => {
+          const data = getGeneratedData().map((d) => d.email);
+          copyToClipboard(data.join("\n"), "Email disalin");
+        });
+        document.getElementById("btn-copy-all").addEventListener("click", () => {
+          const data = getGeneratedData();
+          const lines = data.map((d) => `${d.name}\t${d.username}\t${d.email}`);
+          copyToClipboard(lines.join("\n"), "Semua data disalin");
+        });
+        document.getElementById("btn-csv").addEventListener("click", () => {
+          const data = getGeneratedData();
+          if (data.length === 0) {
+            showToast("Tidak ada yang didownload");
+            return;
+          }
+          const header = "Nama Lengkap,Username,Email,Role";
+          const lines = data.map((d) => `"${d.name}","${d.username}","${d.email}","${d.role}"`);
+          const csv = [header, ...lines].join("\n");
+          const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "username-maker.csv";
+          a.click();
+          URL.revokeObjectURL(url);
+          showToast("CSV didownload");
+        });
+        document.getElementById("btn-clear-all").addEventListener("click", () => {
+          if (rows.length === 0) return;
+          rows = [];
+          idCounter = 0;
+          render();
+          showToast("Semua data dihapus");
+        });
+
+        // Init
+        render();
+      })();
+    </script>
+  </body>
+</html>

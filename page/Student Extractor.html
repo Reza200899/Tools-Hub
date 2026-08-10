@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="shared.css" />
+    <title>Student Extractor - Bookmarklet</title>
+    <style>
+      .container { max-width: 1100px; }
+      .topbar { margin-bottom: 20px; }
+      .topbar-row { align-items: flex-start; }
+      h1 { font-size: 1.5rem; margin: 0 0 4px; }
+      .subtitle { margin: 0 0 20px; }
+      .panel { margin-bottom: 16px; }
+      .panel h2 { font-size: 1rem; margin: 0 0 8px; }
+      .panel p { font-size: .8rem; color: var(--muted); margin: 0 0 12px; }
+      ol { font-size: .8rem; color: var(--muted); padding-left: 18px; margin: 0 0 16px; }
+      ol li { margin-bottom: 6px; }
+      .bookmarklet-wrap { text-align: center; padding: 20px; }
+      .bookmarklet-link {
+        display: inline-block; padding: 12px 24px; border-radius: 8px;
+        background: var(--primary); color: var(--primary-fg); font-weight: 600;
+        font-size: 1rem; text-decoration: none; transition: all .3s;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      }
+      .bookmarklet-link:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
+      .code-block {
+        background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+        padding: 12px 16px; font-family: ui-monospace, monospace; font-size: .7rem;
+        overflow-x: auto; word-break: break-all; white-space: pre-wrap;
+        color: var(--muted); margin: 0; max-height: 200px; overflow-y: auto;
+        user-select: all; cursor: pointer; position: relative;
+      }
+      .code-block:hover { border-color: var(--primary); }
+      .copy-btn {
+        display: inline-block; margin-top: 8px; padding: 6px 14px; border-radius: 6px;
+        background: var(--card); border: 1px solid var(--border); color: var(--fg);
+        font-size: .75rem; font-weight: 500; cursor: pointer;
+        transition: all .3s;
+      }
+      .copy-btn:hover { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+      .toast {
+        position: fixed; right: 16px; bottom: 16px; z-index: 100;
+      }
+      .format-table { width: 100%; border-collapse: collapse; font-size: .75rem; margin-top: 12px; }
+      .format-table th, .format-table td { padding: 6px 10px; border: 1px solid var(--border); text-align: left; }
+      .format-table th { background: var(--code-bg); color: var(--muted); font-weight: 500; }
+      .theme-toggle {
+        position: fixed; top: 16px; right: 16px; gap: 6px;
+        padding: 6px 12px; font-size: .75rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container view active">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Student Extractor</h1>
+            <p class="subtitle">Bookmarklet untuk extract data student dari halaman School Admin.</p>
+          </div>
+          <div class="topbar-actions">
+          <a href="../Tools Hub.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Home</a>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span id="theme-label">Mode Terang</span>
+          </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>📖 Cara Pakai</h2>
+        <ol>
+          <li>Buka halaman School Admin yang berisi daftar student.</li>
+          <li><strong>Drag & drop</strong> tombol di bawah ke bookmark bar browser kamu.</li>
+          <li>Klik bookmark tersebut saat halaman student terbuka.</li>
+          <li>Data otomatis ter-copy ke clipboard dalam format TSV (tab-separated).</li>
+          <li>Paste ke Excel/Google Sheets.</li>
+        </ol>
+      </div>
+
+      <div class="panel">
+        <h2>📌 Bookmarklet</h2>
+        <p>Drag tombol ini ke bookmark bar kamu:</p>
+        <div class="bookmarklet-wrap">
+          <a class="bookmarklet-link" id="bookmarklet-link" href="#">📋 Extract Students</a>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>📝 Atau copy kode manual:</h2>
+        <div class="code-block" id="code-block"></div>
+        <div style="text-align:center">
+          <button class="copy-btn" onclick="copyCode()">Salin Kode</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>📊 Contoh Output</h2>
+        <p>Hasil paste ke Excel/Google Sheets:</p>
+        <table class="format-table">
+          <thead><tr><th>Student ID</th><th>Name</th><th>Edit ID</th><th>Gender</th></tr></thead>
+          <tbody>
+            <tr><td>1022964</td><td>Ailin Meng</td><td>1279168</td><td>Female</td></tr>
+            <tr><td>1022965</td><td>John Smith</td><td>1279169</td><td>Male</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <h2>⚙️ Opsi Output</h2>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+          <label style="font-size:.8rem;display:flex;align-items:center;gap:4px;cursor:pointer">
+            <input type="checkbox" id="opt-gender" checked> Gender
+          </label>
+          <label style="font-size:.8rem;display:flex;align-items:center;gap:4px;cursor:pointer">
+            <input type="checkbox" id="opt-editid" checked> Edit ID
+          </label>
+          <label style="font-size:.8rem;display:flex;align-items:center;gap:4px;cursor:pointer">
+            <input type="checkbox" id="opt-img"> Image URL
+          </label>
+        </div>
+        <p style="margin-top:8px">Ubah opsi lalu drag bookmarklet lagi untuk update.</p>
+      </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+      function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg; t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2200);
+      }
+      function toggleTheme() {
+        const r = document.documentElement;
+        r.setAttribute("data-theme", r.getAttribute("data-theme") === "dark" ? "light" : "dark");
+        localStorage.setItem("theme", r.getAttribute("data-theme"));
+      }
+      document.getElementById("theme-toggle").addEventListener("click", toggleTheme);
+      (function(){ const s=localStorage.getItem("theme"); if(s) document.documentElement.setAttribute("data-theme",s); })();
+
+      function buildBookmarklet() {
+        const includeGender = document.getElementById("opt-gender").checked;
+        const includeEditId = document.getElementById("opt-editid").checked;
+        const includeImg = document.getElementById("opt-img").checked;
+
+        const js = `(function(){
+  function _modal(msg, ok) {
+    var d=document.createElement('div');
+    d.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45)';
+    var b=document.createElement('div');
+    b.style.cssText='background:#1e293b;color:#f1f5f9;border:1px solid #334155;border-radius:14px;padding:24px 28px;max-width:380px;width:90%;font:500 14px/1.5 system-ui,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.35);text-align:center';
+    b.textContent=msg;
+    var bt=document.createElement('button');
+    bt.textContent=ok||'OK';
+    bt.style.cssText='margin-top:16px;padding:8px 24px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font:500 13px/1 system-ui;cursor:pointer';
+    bt.onclick=function(){d.remove()};
+    b.appendChild(bt);d.appendChild(b);document.body.appendChild(d);
+  }
+  var rows = document.querySelectorAll('td[student]');
+  if (!rows.length) { _modal('Tidak ditemukan data student di halaman ini.'); return; }
+  var lines = ['Student ID\\tName' + (includeEditId ? '\\tEdit ID' : '') + (includeGender ? '\\tGender' : '') + (includeImg ? '\\tImage URL' : '')];
+  rows.forEach(function(td) {
+    var sid = td.getAttribute('student') || '';
+    var a = td.querySelector('a');
+    var name = '';
+    if (a) {
+      for (var i = 0; i < a.childNodes.length; i++) {
+        if (a.childNodes[i].nodeType === 3) { name += a.childNodes[i].textContent; }
+      }
+      name = name.trim();
+    }
+    if (!name) name = (td.textContent || '').trim();
+    var editId = '';
+    if (includeEditId && a) {
+      var m = a.href.match(/\\/(\\d+)\\/?$/);
+      if (m) editId = m[1];
+    }
+    var gender = '';
+    if (includeGender) {
+      var gIcon = td.closest('tr') ? td.closest('tr').querySelector('.fa-mars, .fa-venus, [class*="gender"]') : null;
+      if (!gIcon) {
+        var tr = td.closest('tr');
+        if (tr) {
+          var allTds = tr.querySelectorAll('td');
+          allTds.forEach(function(c) {
+            if (c.querySelector('.fa-mars')) gender = 'Male';
+            else if (c.querySelector('.fa-venus')) gender = 'Female';
+          });
+        }
+      } else {
+        gender = gIcon.classList.contains('fa-mars') ? 'Male' : 'Female';
+      }
+    }
+    var imgUrl = '';
+    if (includeImg) {
+      var img = td.querySelector('img');
+      if (img) imgUrl = img.src;
+    }
+    lines.push(sid + '\\t' + name + (includeEditId ? '\\t' + editId : '') + (gender ? '\\t' + gender : '') + (includeImg ? '\\t' + imgUrl : ''));
+  });
+  navigator.clipboard.writeText(lines.join('\\n'));
+  _modal('Berhasil! ' + (rows.length) + ' student disalin ke clipboard.\\nPaste ke Excel/Google Sheets.');
+})();`;
+
+        return "javascript:" + encodeURIComponent(js);
+      }
+
+      function updateBookmarklet() {
+        const code = buildBookmarklet();
+        const link = document.getElementById("bookmarklet-link");
+        link.href = code;
+
+        // Show raw code for copy
+        const rawCode = decodeURIComponent(code.replace("javascript:", ""));
+        document.getElementById("code-block").textContent = rawCode;
+      }
+
+      function copyCode() {
+        const code = decodeURIComponent(document.getElementById("bookmarklet-link").href.replace("javascript:", ""));
+        navigator.clipboard.writeText(code);
+        showToast("Kode berhasil disalin!");
+      }
+
+      document.getElementById("opt-gender").addEventListener("change", updateBookmarklet);
+      document.getElementById("opt-editid").addEventListener("change", updateBookmarklet);
+      document.getElementById("opt-img").addEventListener("change", updateBookmarklet);
+
+      updateBookmarklet();
+    </script>
+  </body>
+</html>

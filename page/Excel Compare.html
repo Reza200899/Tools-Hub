@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="shared.css" />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
+    <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <title>Excel Compare</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+      .container { max-width: 1100px; }
+      .topbar { margin-bottom: 20px; }
+      .topbar-row { align-items: flex-start; }
+      .subtitle { margin: 0; }
+
+      /* Drop zones */
+      .drop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+      .drop-zone {
+        border: 2px dashed var(--border); border-radius: 10px; padding: 32px 16px;
+        text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.2s;
+        background: var(--input);
+      }
+      .drop-zone:hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 5%, var(--input)); }
+      .drop-zone.drag-over {
+        border-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--input));
+        transform: translateY(-2px);
+      }
+      .drop-zone.has-file { border-color: #22c55e; border-style: solid; }
+      .drop-zone .icon { font-size: 2rem; margin-bottom: 8px; display: block; }
+      .drop-zone .label { font-weight: 600; font-size: 0.9rem; }
+      .drop-zone .hint { color: var(--muted); font-size: 0.75rem; margin-top: 4px; }
+      .drop-zone .filename { color: #22c55e; font-weight: 600; font-size: 0.85rem; margin-top: 8px; word-break: break-all; }
+      input[type="file"] { display: none; }
+
+      /* Sheet selector */
+      .sheet-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+      .sheet-row label { font-size: 0.875rem; font-weight: 500; color: var(--muted); white-space: nowrap; }
+      .sheet-row select { width: auto; }
+
+      /* Compare button */
+      .compare-bar { display: flex; gap: 8px; align-items: center; justify-content: center; margin-bottom: 16px; }
+      .compare-bar .btn { padding: 8px 24px; font-size: 0.95rem; }
+
+      /* Stats */
+      .stats-bar {
+        display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px;
+      }
+      .stat-card {
+        background: var(--input); border: 1px solid var(--border); border-radius: 8px;
+        padding: 12px 16px; flex: 1; min-width: 120px; text-align: center;
+      }
+      .stat-card .stat-val { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+      .stat-card .stat-label { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+      .stat-card.same .stat-val { color: #22c55e; }
+      .stat-card.diff .stat-val { color: #ef4444; }
+
+      /* Table */
+      .table-wrap { max-height: none; }
+      table { font-size: 0.8rem; }
+      th { cursor: pointer; user-select: none; white-space: nowrap; }
+      th:hover { color: var(--fg); }
+
+      td.col-loc { width: 120px; color: var(--muted); font-family: ui-monospace, monospace; font-size: 0.75rem; }
+      td.col-val { width: calc(50% - 60px); }
+      td.col-val.val-self { background: rgba(239, 68, 68, 0.06); }
+      td.col-val.val-other { background: rgba(34, 197, 94, 0.06); }
+      td.col-status { width: 60px; text-align: center; font-weight: 600; }
+      .badge { border-radius: 99px; }
+      .badge.diff { background: rgba(239,68,68,0.15); color: #ef4444; }
+      .badge.only-a { background: rgba(251,191,36,0.15); color: #f59e0b; }
+      .badge.only-b { background: rgba(99,102,241,0.15); color: #818cf8; }
+
+      /* Loading */
+      .loading { display: none; text-align: center; padding: 24px; }
+      .loading.active { display: block; }
+      .spinner {
+        width: 32px; height: 32px; border: 3px solid var(--border);
+        border-top-color: var(--primary); border-radius: 50%;
+        animation: spin 0.6s linear infinite; margin: 0 auto 8px;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* Search */
+      .search-wrap { margin-bottom: 12px; }
+      .search-wrap input {
+        width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);
+        background: var(--input); color: var(--fg); font-size: 0.875rem; outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .search-wrap input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent); }
+
+      /* Filter tabs */
+      .filter-tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+      .filter-tab {
+        padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border);
+        background: var(--bg); color: var(--muted); font-size: 0.75rem; font-weight: 500;
+        cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+      }
+      .filter-tab:hover { border-color: var(--primary); color: var(--fg); }
+      .filter-tab.active { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+
+      /* Base data */
+      #base-rekap {
+        margin-bottom: 16px; background: var(--card);
+        border: 1px solid var(--border); border-radius: 12px;
+        padding: 16px;
+      }
+      #base-rekap .base-header {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 8px; margin-bottom: 8px; flex-wrap: wrap;
+      }
+      #base-rekap .base-header span { font-weight: 600; font-size: 0.85rem; }
+      #base-toggle {
+        font-size: 0.65rem; padding: 1px 8px; border-radius: 4px;
+        background: var(--accent); border: 1px solid var(--border);
+        color: var(--muted); cursor: pointer;
+      }
+      #base-toggle:hover { color: var(--fg); }
+      #base-wrap {
+        max-height: 250px; overflow: auto; border-radius: 6px;
+        border: 1px solid var(--border);
+        scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+      }
+      #base-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+      #base-wrap::-webkit-scrollbar-track { background: transparent; }
+      #base-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+      #base-table { width: auto; min-width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+      #base-table thead { background: var(--accent); }
+      #base-table thead th { padding: 6px 10px; font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
+      #base-table tbody tr { height: 26px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+      #base-table tbody tr:hover { background: var(--row-hover); }
+      #base-table tbody td { padding: 4px 10px; white-space: nowrap; }
+      #base-table tbody td.diff-cell { background: rgba(239,68,68,0.15); color: #ef4444; font-weight: 500; }
+
+      @media (max-width: 600px) {
+        .drop-grid { grid-template-columns: 1fr; }
+        .container { padding: 16px 8px; }
+        .panel { padding: 12px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container view active">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Excel Compare</h1>
+            <p class="subtitle">Bandingkan dua file Excel, cell per cell.</p>
+          </div>
+          <div class="topbar-actions">
+          <a href="../Tools Hub.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Home</a>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span id="theme-label">Mode Terang</span>
+          </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload -->
+      <div id="view-upload" class="view active">
+        <div class="panel">
+          <div class="panel-header"><h2>Pilih File</h2></div>
+          <div class="drop-grid">
+            <div class="drop-zone" id="drop-a" tabindex="0">
+              <span class="icon">📄</span>
+              <span class="label">File A (Original)</span>
+              <span class="hint">Klik atau seret file ke sini</span>
+              <span class="filename" id="fname-a"></span>
+              <input type="file" id="file-a" accept=".xlsx,.xls,.csv" />
+            </div>
+            <div class="drop-zone" id="drop-b" tabindex="0">
+              <span class="icon">📄</span>
+              <span class="label">File B (Perbandingan)</span>
+              <span class="hint">Klik atau seret file ke sini</span>
+              <span class="filename" id="fname-b"></span>
+              <input type="file" id="file-b" accept=".xlsx,.xls,.csv" />
+            </div>
+          </div>
+          <div id="sheet-selectors" style="display:none">
+            <div class="sheet-row">
+              <label>Sheet File A:</label>
+              <select id="sheet-a"></select>
+              <label>Sheet File B:</label>
+              <select id="sheet-b"></select>
+            </div>
+          </div>
+          <div class="compare-bar">
+            <button class="btn btn-primary" id="btn-compare" disabled>Compare</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div id="view-loading" class="view">
+        <div class="panel">
+          <div class="loading active">
+            <div class="spinner"></div>
+            <div style="color:var(--muted);font-size:0.875rem">Membandingkan...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="view-result" class="view">
+        <div class="panel">
+          <div class="panel-header">
+            <div style="display:flex;align-items:center;gap:12px">
+              <button class="btn" id="btn-back">← Kembali</button>
+              <h2>Hasil Perbandingan</h2>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-size:0.75rem;color:var(--muted)" id="result-info"></span>
+              <button class="btn" id="btn-export-csv">Export CSV</button>
+            </div>
+          </div>
+          <div class="stats-bar" id="stats-bar"></div>
+          <div id="base-rekap" style="display:none">
+            <div class="base-header">
+              <span>Base Data</span>
+              <div style="display:flex;gap:6px;align-items:center">
+                <select id="base-file-sel" style="padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:var(--input);color:var(--fg);font-size:0.7rem"></select>
+                <button id="base-toggle">Sembunyikan</button>
+              </div>
+            </div>
+            <div id="base-wrap">
+              <table id="base-table">
+                <thead><tr id="base-header-row"></tr></thead>
+                <tbody id="base-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="filter-tabs" id="filter-tabs"></div>
+          <div class="search-wrap">
+            <input type="text" id="search-input" placeholder="Cari cell..." autocomplete="off" />
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th class="col-loc" data-sort="loc">Lokasi</th>
+                  <th class="col-val" data-sort="a">File A</th>
+                  <th class="col-val" data-sort="b">File B</th>
+                  <th class="col-status" data-sort="status">Status</th>
+                </tr>
+              </thead>
+              <tbody id="result-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    (function(){
+      // === Theme ===
+      const root = document.documentElement;
+      const toggle = document.getElementById("theme-toggle");
+      const label = document.getElementById("theme-label");
+      const sun = toggle.querySelector(".icon-sun");
+      const moon = toggle.querySelector(".icon-moon");
+      function applyTheme(t){
+        root.setAttribute("data-theme", t);
+        if(t==="light"){ sun.style.display="none"; moon.style.display="inline"; label.textContent="Mode Gelap"; }
+        else { sun.style.display="inline"; moon.style.display="none"; label.textContent="Mode Terang"; }
+        try{ localStorage.setItem("theme", t); }catch(e){}
+      }
+      let saved; try{ saved = localStorage.getItem("theme"); }catch(e){}
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      applyTheme(saved || (prefersDark ? "dark" : "dark"));
+      toggle.addEventListener("click",()=>{
+        toggle.classList.remove("is-switching"); void toggle.offsetWidth; toggle.classList.add("is-switching");
+        const c = root.getAttribute("data-theme")||"light";
+        applyTheme(c==="dark"?"light":"dark"); toggle.blur();
+      });
+
+      // === Views ===
+      const views = { upload: document.getElementById("view-upload"), loading: document.getElementById("view-loading"), result: document.getElementById("view-result") };
+      function showView(name){ Object.keys(views).forEach(k=>views[k].classList.toggle("active",k===name)); }
+
+      // === File handling ===
+      let fileA = null, fileB = null, dataA = null, dataB = null;
+      const dropA = document.getElementById("drop-a"), dropB = document.getElementById("drop-b");
+      const fileInputA = document.getElementById("file-a"), fileInputB = document.getElementById("file-b");
+      const fnameA = document.getElementById("fname-a"), fnameB = document.getElementById("fname-b");
+      const sheetSelectors = document.getElementById("sheet-selectors");
+      const sheetSelA = document.getElementById("sheet-a"), sheetSelB = document.getElementById("sheet-b");
+      const btnCompare = document.getElementById("btn-compare");
+
+      function setupDrop(zone, input, onFile){
+        zone.addEventListener("click",()=>input.click());
+        zone.addEventListener("keydown",(e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); input.click(); }});
+        zone.addEventListener("dragover",(e)=>{ e.preventDefault(); zone.classList.add("drag-over"); });
+        zone.addEventListener("dragleave",()=>zone.classList.remove("drag-over"));
+        zone.addEventListener("drop",(e)=>{
+          e.preventDefault(); zone.classList.remove("drag-over");
+          if(e.dataTransfer.files.length) onFile(e.dataTransfer.files[0]);
+        });
+        input.addEventListener("change",()=>{ if(input.files.length) onFile(input.files[0]); });
+      }
+
+      function handleFile(file, side){
+        const reader = new FileReader();
+        reader.onload = (e)=>{
+          try{
+            const wb = XLSX.read(e.target.result, {type:"array"});
+            if(side==="a"){ fileA=file; dataA=wb; fnameA.textContent=file.name; dropA.classList.add("has-file"); }
+            else { fileB=file; dataB=wb; fnameB.textContent=file.name; dropB.classList.add("has-file"); }
+            updateSheetSelectors();
+          }catch(err){ showToast("Gagal baca file: "+err.message, "error"); }
+        };
+        reader.readAsArrayBuffer(file);
+      }
+
+      function updateSheetSelectors(){
+        if(!dataA||!dataB) return;
+        sheetSelectors.style.display="flex";
+        sheetSelA.innerHTML = dataA.SheetNames.map(n=>`<option value="${n}">${n}</option>`).join("");
+        sheetSelB.innerHTML = dataB.SheetNames.map(n=>`<option value="${n}">${n}</option>`).join("");
+        btnCompare.disabled = false;
+      }
+
+      setupDrop(dropA, fileInputA, (f)=>handleFile(f,"a"));
+      setupDrop(dropB, fileInputB, (f)=>handleFile(f,"b"));
+
+      // === Compare ===
+      btnCompare.addEventListener("click",()=>{
+        showView("loading");
+        setTimeout(()=>doCompare(), 50);
+      });
+
+      let diffResults = [];
+      let rawA = [], rawB = [];
+
+      function doCompare(){
+        rawA = XLSX.utils.sheet_to_json(dataA.Sheets[sheetSelA.value], {header:1, defval:""});
+        rawB = XLSX.utils.sheet_to_json(dataB.Sheets[sheetSelB.value], {header:1, defval:""});
+        const maxR = Math.max(rawA.length, rawB.length);
+        let maxC = 0;
+        for(let r=0;r<rawA.length;r++) maxC = Math.max(maxC, rawA[r].length);
+        for(let r=0;r<rawB.length;r++) maxC = Math.max(maxC, rawB[r].length);
+
+        diffResults = [];
+        let sameCount = 0;
+
+        for(let r=0; r<maxR; r++){
+          for(let c=0; c<maxC; c++){
+            const valA = (rawA[r]&&rawA[r][c]!==undefined) ? String(rawA[r][c]) : "";
+            const valB = (rawB[r]&&rawB[r][c]!==undefined) ? String(rawB[r][c]) : "";
+            const loc = colName(c)+(r+1);
+            if(valA===valB){ sameCount++; continue; }
+            let status = "diff";
+            if(valA && !valB) status = "only-a";
+            else if(!valA && valB) status = "only-b";
+            diffResults.push({ loc, row:r+1, col:c, a:valA, b:valB, status });
+          }
+        }
+
+        const totalCells = maxR * maxC;
+        renderStats(totalCells, diffResults.length, sameCount);
+        initBaseTable();
+        renderTabs();
+        currentFilter = "all";
+        renderResults();
+        showView("result");
+      }
+
+      function colName(c){
+        let n="";
+        c++;
+        while(c>0){ c--; n = String.fromCharCode(65+(c%26))+n; c=Math.floor(c/26); }
+        return n;
+      }
+
+      // === Base Data ===
+      let baseCurrentFile = "a";
+      function initBaseTable(){
+        const panel = document.getElementById("base-rekap");
+        const sel = document.getElementById("base-file-sel");
+        panel.style.display = "block";
+        sel.innerHTML = '<option value="a">File A</option><option value="b">File B</option>';
+        sel.onchange = ()=>{ baseCurrentFile = sel.value; renderBaseTable(); };
+        document.getElementById("base-toggle").onclick = function(){
+          const wrap = document.getElementById("base-wrap");
+          const isHidden = wrap.style.display === "none";
+          wrap.style.display = isHidden ? "" : "none";
+          this.textContent = isHidden ? "Sembunyikan" : "Tampilkan";
+        };
+        renderBaseTable();
+      }
+
+      function renderBaseTable(){
+        const rows = baseCurrentFile==="a" ? rawA : rawB;
+        const maxC = rows.reduce((m,r)=>Math.max(m,r.length), 0);
+        const thead = document.getElementById("base-header-row");
+        const tbody = document.getElementById("base-body");
+        let hHtml = '<th style="min-width:36px;text-align:center">#</th>';
+        for(let c=0;c<maxC;c++) hHtml += `<th>${colName(c)}</th>`;
+        thead.innerHTML = hHtml;
+        tbody.innerHTML = "";
+        const frag = document.createDocumentFragment();
+        const maxR = Math.min(rows.length, 1000);
+        for(let r=0;r<maxR;r++){
+          const row = rows[r];
+          const tr = document.createElement("tr");
+          let html = `<td style="text-align:center;color:var(--muted);font-size:0.7rem;white-space:nowrap">${r+1}</td>`;
+          for(let c=0;c<maxC;c++){
+            const val = String(row[c]||"");
+            const isDiff = diffResults.some(d=>d.row===r+1 && d.col===c);
+            html += `<td data-col="${c}"${isDiff?' class="diff-cell"':''}>${esc(val)}</td>`;
+          }
+          tr.innerHTML = html;
+          frag.appendChild(tr);
+        }
+        tbody.appendChild(frag);
+      }
+
+      // Hover base row → tooltip + filter diff results
+      let baseHoverRow = null;
+      let savedFilter = "all";
+      let savedSearch = "";
+
+      // Create tooltip
+      const baseTooltip = document.createElement("div");
+      baseTooltip.style.cssText = "display:none;position:fixed;z-index:1000;padding:8px 12px;border-radius:8px;background:var(--card);border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,0.2);font-size:0.75rem;max-width:400px;pointer-events:none;color:var(--fg);";
+      document.body.appendChild(baseTooltip);
+
+      document.getElementById("base-body").addEventListener("mouseover", e=>{
+        const td = e.target.closest("td");
+        if(!td) return;
+        const tr = td.closest("tr");
+        if(!tr) return;
+        const rowIdx = parseInt(tr.querySelector("td").textContent);
+        if(isNaN(rowIdx)) return;
+        const colIdx = td.dataset.col;
+        if(colIdx===undefined) return;
+        const c = parseInt(colIdx);
+
+        // Find diff for this specific cell
+        const cellDiff = diffResults.find(d=>d.row===rowIdx && d.col===c);
+        if(!cellDiff) { baseTooltip.style.display = "none"; return; }
+        baseHoverRow = rowIdx;
+
+        // Build tooltip
+        const loc = colName(c) + rowIdx;
+        baseTooltip.innerHTML = `
+          <div style="font-weight:600;margin-bottom:4px">${loc}</div>
+          <div style="margin:2px 0"><span style="color:var(--muted)">File A:</span> <span style="color:#ef4444">${esc(cellDiff.a||"(kosong)")}</span></div>
+          <div style="margin:2px 0"><span style="color:var(--muted)">File B:</span> <span style="color:#22c55e">${esc(cellDiff.b||"(kosong)")}</span></div>
+        `;
+
+        // Position tooltip near cell
+        const rect = td.getBoundingClientRect();
+        let tx = rect.right + 6;
+        let ty = rect.top;
+        if(tx + 300 > window.innerWidth) tx = rect.left - 306;
+        if(ty + 80 > window.innerHeight) ty = window.innerHeight - 84;
+        baseTooltip.style.left = tx + "px";
+        baseTooltip.style.top = ty + "px";
+        baseTooltip.style.display = "block";
+
+        // Filter diff results to this cell
+        renderResultsFiltered([cellDiff]);
+      });
+
+      document.getElementById("base-body").addEventListener("mouseout", e=>{
+        const tr = e.target.closest("tr");
+        if(!tr || !tr.contains(e.relatedTarget)) {
+          baseHoverRow = null;
+          baseTooltip.style.display = "none";
+          renderResults(); // restore normal
+        }
+      });
+
+      function renderResultsFiltered(filtered){
+        document.getElementById("result-info").textContent = `Row ${baseHoverRow} — ${filtered.length} dari ${diffResults.length} cell`;
+        const tbody = document.getElementById("result-tbody");
+        if(filtered.length===0){
+          tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Tidak ada perbedaan di row ini.</td></tr>`;
+          return;
+        }
+        const frag = document.createDocumentFragment();
+        filtered.forEach(d=>{
+          const tr = document.createElement("tr");
+          const badgeCls = d.status==="diff"?"diff":d.status==="only-a"?"only-a":"only-b";
+          const badgeText = d.status==="diff"?"≠":d.status==="only-a"?"← A":"B →";
+          tr.innerHTML = `
+            <td class="col-loc">${d.loc}</td>
+            <td class="col-val val-self">${esc(d.a)}</td>
+            <td class="col-val val-other">${esc(d.b)}</td>
+            <td class="col-status"><span class="badge ${badgeCls}">${badgeText}</span></td>
+          `;
+          frag.appendChild(tr);
+        });
+        tbody.innerHTML = "";
+        tbody.appendChild(frag);
+      }
+
+      // === Stats ===
+      function renderStats(total, diff, same){
+        const bar = document.getElementById("stats-bar");
+        const diffOnly = diffResults.filter(d=>d.status==="diff").length;
+        const onlyA = diffResults.filter(d=>d.status==="only-a").length;
+        const onlyB = diffResults.filter(d=>d.status==="only-b").length;
+        bar.innerHTML = `
+          <div class="stat-card"><div class="stat-val">${total.toLocaleString()}</div><div class="stat-label">Total Cell</div></div>
+          <div class="stat-card same"><div class="stat-val">${same.toLocaleString()}</div><div class="stat-label">Sama</div></div>
+          <div class="stat-card diff"><div class="stat-val">${diff.toLocaleString()}</div><div class="stat-label">Berbeda</div></div>
+          <div class="stat-card"><div class="stat-val" style="color:#f59e0b">${onlyA}</div><div class="stat-label">Hanya di A</div></div>
+          <div class="stat-card"><div class="stat-val" style="color:#818cf8">${onlyB}</div><div class="stat-label">Hanya di B</div></div>
+        `;
+      }
+
+      // === Tabs ===
+      let currentFilter = "all";
+      function renderTabs(){
+        const tabs = document.getElementById("filter-tabs");
+        const counts = { all:diffResults.length, diff:0, "only-a":0, "only-b":0 };
+        diffResults.forEach(d=>counts[d.status]++);
+        tabs.innerHTML = [
+          {key:"all", label:"Semua"},
+          {key:"diff", label:"Bedа"},
+          {key:"only-a", label:"Hanya A"},
+          {key:"only-b", label:"Hanya B"},
+        ].map(t=>`<button class="filter-tab${t.key===currentFilter?" active":""}" data-filter="${t.key}">${t.label} (${counts[t.key]})</button>`).join("");
+        tabs.querySelectorAll(".filter-tab").forEach(btn=>{
+          btn.addEventListener("click",()=>{
+            currentFilter = btn.dataset.filter;
+            tabs.querySelectorAll(".filter-tab").forEach(b=>b.classList.toggle("active",b.dataset.filter===currentFilter));
+            renderResults();
+          });
+        });
+      }
+
+      // === Render table ===
+      let currentSort = { key:"loc", asc:true };
+      function renderResults(){
+        let filtered = currentFilter==="all" ? [...diffResults] : diffResults.filter(d=>d.status===currentFilter);
+        // Search
+        const q = document.getElementById("search-input").value.toLowerCase();
+        if(q) filtered = filtered.filter(d=> d.loc.toLowerCase().includes(q) || d.a.toLowerCase().includes(q) || d.b.toLowerCase().includes(q));
+        // Sort
+        filtered.sort((a,b)=>{
+          let va, vb;
+          if(currentSort.key==="loc"){ va=a.loc; vb=b.loc; }
+          else if(currentSort.key==="a"){ va=a.a; vb=b.a; }
+          else if(currentSort.key==="b"){ va=a.b; vb=b.b; }
+          else { va=a.status; vb=b.status; }
+          if(va<vb) return currentSort.asc?-1:1;
+          if(va>vb) return currentSort.asc?1:-1;
+          return 0;
+        });
+        document.getElementById("result-info").textContent = `${filtered.length} dari ${diffResults.length} cell`;
+        const tbody = document.getElementById("result-tbody");
+        if(filtered.length===0){
+          tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Tidak ada perbedaan ditemukan.</td></tr>`;
+          return;
+        }
+        const frag = document.createDocumentFragment();
+        const batch = Math.min(filtered.length, 2000);
+        for(let i=0;i<batch;i++){
+          const d = filtered[i];
+          const tr = document.createElement("tr");
+          const badgeCls = d.status==="diff"?"diff":d.status==="only-a"?"only-a":"only-b";
+          const badgeText = d.status==="diff"?"≠":d.status==="only-a"?"← A":"B →";
+          tr.innerHTML = `
+            <td class="col-loc">${d.loc}</td>
+            <td class="col-val val-self">${esc(d.a)}</td>
+            <td class="col-val val-other">${esc(d.b)}</td>
+            <td class="col-status"><span class="badge ${badgeCls}">${badgeText}</span></td>
+          `;
+          frag.appendChild(tr);
+        }
+        tbody.innerHTML = "";
+        tbody.appendChild(frag);
+        if(filtered.length>2000){
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td colspan="4" class="empty-state">Menampilkan 2000 dari ${filtered.length} baris. Gunakan filter atau pencarian untuk menyempitkan.</td>`;
+          tbody.appendChild(tr);
+        }
+      }
+
+      // Sort headers
+      document.querySelectorAll("th[data-sort]").forEach(th=>{
+        th.addEventListener("click",()=>{
+          const key = th.dataset.sort;
+          if(currentSort.key===key) currentSort.asc=!currentSort.asc;
+          else { currentSort.key=key; currentSort.asc=true; }
+          renderResults();
+        });
+      });
+
+      // Search
+      document.getElementById("search-input").addEventListener("input",()=>renderResults());
+
+      // === Export CSV ===
+      document.getElementById("btn-export-csv").addEventListener("click",()=>{
+        let csv = "Lokasi,File A,File B,Status\n";
+        diffResults.forEach(d=>{
+          csv += `"${d.loc}","${d.a.replace(/"/g,'""')}","${d.b.replace(/"/g,'""')}","${d.status}"\n`;
+        });
+        const blob = new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8;"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "compare-result.csv";
+        a.click();
+        URL.revokeObjectURL(a.href);
+        showToast("CSV diexport");
+      });
+
+      // === Back ===
+      document.getElementById("btn-back").addEventListener("click",()=>showView("upload"));
+
+      // === Util ===
+      function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+      function showToast(msg, type){
+        const bg = type==="error" ? "rgba(239,68,68,0.95)" : "rgba(34,197,94,0.95)";
+        const c = document.createElement("div");
+        c.style.cssText = `position:fixed;right:16px;bottom:16px;z-index:1000;max-width:min(320px,100%);padding:12px 14px;border-radius:8px;background:${bg};color:#fff;box-shadow:0 10px 25px rgba(0,0,0,0.2);font-size:0.875rem;font-weight:500;opacity:0;transform:translateY(8px);transition:opacity 0.2s,transform 0.2s;`;
+        c.textContent = msg;
+        document.body.appendChild(c);
+        requestAnimationFrame(()=>{ c.style.opacity="1"; c.style.transform="translateY(0)"; });
+        setTimeout(()=>{ c.style.opacity="0"; c.style.transform="translateY(8px)"; setTimeout(()=>c.remove(),220); }, 2200);
+      }
+    })();
+    </script>
+  </body>
+</html>

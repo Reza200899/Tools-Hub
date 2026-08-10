@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="shared.css" />
+    <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
+    <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
+    <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <title>Python Variable Explorer</title>
+    <style>
+      .container { max-width: 1100px; }
+      .topbar { margin-bottom: 20px; }
+      .topbar-row { align-items: flex-start; }
+      .dropzone {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 48px 24px; border: 2px dashed var(--border); border-radius: 12px;
+        background: var(--card); cursor: pointer; transition: all 0.3s;
+      }
+      .dropzone:hover, .dropzone.dragover {
+        border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--card));
+      }
+      .dropzone i { font-size: 2.5rem; color: var(--primary); margin-bottom: 12px; }
+      .dropzone .dz-label { font-size: 0.875rem; font-weight: 500; color: var(--fg); margin-bottom: 4px; }
+      .dropzone .dz-hint { font-size: 0.75rem; color: var(--muted); }
+
+      /* ═══════ DEF LIST ═══════ */
+      .def-list { display: flex; flex-direction: column; gap: 2px; }
+      .def-row {
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px 14px; cursor: pointer; border: 1px solid var(--border); border-radius: 8px;
+        background: var(--card); transition: all 0.15s;
+      }
+      .def-row:hover { border-color: var(--primary); background: var(--row-hover); }
+      .def-row-icon { color: var(--primary); font-size: 0.75rem; width: 18px; text-align: center; }
+      .def-row-name {
+        flex: 1; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.8125rem; font-weight: 600; color: var(--fg);
+        overflow-wrap: anywhere;
+      }
+      .def-row-args { font-size: 0.75rem; color: var(--muted); }
+      .def-row-args:empty { display: none; }
+      .def-row-meta {
+        font-size: 0.6875rem; color: var(--muted); background: var(--code-bg);
+        padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+      }
+
+      /* ═══════ FUNC DETAIL ═══════ */
+      .var-filter-bar {
+        display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 0;
+      }
+      .var-chip-btn {
+        font-size: 0.75rem; padding: 4px 10px; border-radius: 999px;
+        border: 1px solid var(--border); background: var(--card); color: var(--fg);
+        cursor: pointer; transition: all 0.15s;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+      .var-chip-btn:hover { border-color: var(--primary); }
+      .var-chip-btn.active {
+        background: var(--primary); color: var(--primary-fg); border-color: var(--primary);
+      }
+      .code-block {
+        background: var(--bg); padding: 15px; border-radius: 6px;
+        border: 1px solid var(--border); overflow-x: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.8125rem; color: var(--fg); white-space: pre; line-height: 1.4;
+      }
+      .code-block.filtered { line-height: 0.7; }
+      .line-number { color: var(--muted); margin-right: 12px; user-select: none; }
+      .highlight { background: rgba(6, 182, 212, 0.25); border-radius: 2px; }
+      .highlight-search { background: rgba(234, 179, 8, 0.3); border-radius: 2px; }
+      .code-row { border-radius: 3px; }
+      .code-row.line-def { background: rgba(59, 130, 246, 0.08); }
+      .code-row.line-use { background: rgba(34, 197, 94, 0.08); }
+      .code-row.line-both { background: rgba(168, 85, 247, 0.08); }
+      .line-tag {
+        display: inline-block; margin-left: 6px; font-size: 0.6rem; font-weight: 600;
+        padding: 0 4px; border-radius: 3px; line-height: 1.4; vertical-align: middle;
+      }
+      .line-tag-def { background: rgba(59, 130, 246, 0.15); color: var(--primary); }
+      .line-tag-use { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+      .line-tag-both { background: rgba(168, 85, 247, 0.15); color: var(--purple); }
+      .code-sep {
+        color: var(--muted); font-size: 0.7rem;
+        letter-spacing: 2px; user-select: none;
+      }
+      .code-nav-fixed {
+        position: fixed; right: 24px; bottom: 24px; z-index: 100;
+        display: flex; flex-direction: column; gap: 4px; align-items: center;
+        background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+        padding: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+      .code-nav-fixed button {
+        width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+        padding: 0; font-size: 1rem;
+      }
+      .code-nav-fixed .match-count {
+        font-size: 0.625rem; color: var(--muted); white-space: nowrap;
+      }
+      .empty-state { text-align: center; color: var(--muted); padding: 40px; }
+      .empty-state i { font-size: 2rem; margin-bottom: 12px; display: block; }
+    </style>
+  </head>
+  <body>
+    <!-- VIEW: Def List -->
+    <div class="container view active" id="view-list">
+      <div class="topbar">
+        <div class="topbar-row">
+          <div class="title-block">
+            <h1>Python Variable Explorer</h1>
+            <p class="subtitle">Upload file .py, pilih fungsi, lalu filter variabel di dalamnya.</p>
+          </div>
+          <div class="topbar-actions">
+          <a href="../Tools Hub.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Home</a>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span id="theme-label">Mode Terang</span>
+          </button>
+          </div>
+        </div>
+      </div>
+
+      <input type="file" id="pyFile" accept=".py" style="display:none;">
+
+      <div class="dropzone" id="dropzone">
+        <i class="fas fa-cloud-arrow-up"></i>
+        <span class="dz-label">Seret file .py ke sini, atau klik untuk memilih</span>
+        <span class="dz-hint">File diproses di browser — tidak ada upload ke server</span>
+      </div>
+
+      <div id="funcPanel" style="display:none;">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <div class="d-flex" style="align-items:center; gap:10px;">
+                <h2>Daftar Fungsi</h2>
+                <span class="badge" style="background:rgba(59,130,246,0.15); color:var(--primary);"><span id="funcCount">0</span></span>
+              </div>
+              <p class="panel-meta" id="fileInfo">-</p>
+            </div>
+            <div class="d-flex" style="gap:8px; align-items:center;">
+              <div class="search-wrap" style="max-width: 220px;">
+                <input type="text" id="searchInput" placeholder="Cari fungsi…" autocomplete="off">
+                <button class="search-clear" id="searchClear" type="button" aria-label="Hapus pencarian"><i class="fad fa-xmark"></i></button>
+              </div>
+              <button class="btn-sm" id="btnSort" title="Urutkan A–Z" style="padding:8px 12px; font-size:0.875rem;"><i class="fas fa-arrow-down-a-z"></i></button>
+              <button class="btn-sm" id="btnNewFile" title="Ganti file" style="padding:8px 12px; font-size:0.875rem;"><i class="fas fa-folder-open"></i></button>
+            </div>
+          </div>
+          <div class="def-list" id="defGrid"></div>
+        </div>
+
+        <footer class="note">
+          <p>Catatan</p>
+          <ul>
+            <li>Klik kartu fungsi untuk melihat kode lengkap dan filter variabel.</li>
+            <li>Parameter fungsi (kecuali <code>self</code>) juga terdeteksi sebagai variabel.</li>
+          </ul>
+        </footer>
+      </div>
+    </div>
+
+    <!-- VIEW: Func Detail -->
+    <div class="container view" id="view-func">
+      <div class="topbar">
+        <div class="d-flex justify-content-between w-100">
+          <div class="d-flex" style="align-items:center; gap:12px;">
+            <button class="btn-back" id="btnBack" aria-label="Kembali"><i class="fas fa-arrow-left"></i> Kembali</button>
+            <h1 id="funcTitle" style="color:var(--cyan);">-</h1>
+          </div>
+          <button class="theme-toggle" id="theme-toggle-2" aria-label="Ganti tema">
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span id="theme-label-2">Mode Terang</span>
+          </button>
+        </div>
+        <p class="subtitle" id="funcSubtitle">-</p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><h2>Filter Variabel</h2></div>
+        </div>
+        <div class="var-filter-bar" id="varFilterBar"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h2 id="codeTitle">Kode Lengkap</h2>
+            <p class="panel-meta" id="codeLineInfo">-</p>
+          </div>
+          <div class="d-flex" style="gap:6px; align-items:center;">
+            <div class="search-wrap" id="codeSearchWrap" style="max-width: 180px;">
+              <input type="text" id="codeSearchInput" placeholder="Cari kode…" autocomplete="off">
+              <button class="search-clear" id="codeSearchClear" type="button" aria-label="Hapus pencarian"><i class="fad fa-xmark"></i></button>
+            </div>
+          </div>
+        </div>
+        <div class="code-block" id="funcCode"></div>
+      </div>
+
+      <div class="code-nav-fixed" id="codeNavBtns" style="display:none;">
+        <button class="btn-sm" id="codeSearchPrev" title="Sebelumnya"><i class="fas fa-caret-up"></i></button>
+        <span class="match-count" id="codeMatchInfo"></span>
+        <button class="btn-sm" id="codeSearchNext" title="Selanjutnya"><i class="fas fa-caret-down"></i></button>
+      </div>
+    </div>
+
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <script>
+      /* ═══════ TOAST ═══════ */
+      function showToast(message, isError) {
+        const c = document.getElementById("toast-container");
+        const t = document.createElement("div");
+        t.className = "toast" + (isError ? " toast-error" : "");
+        t.textContent = message;
+        c.appendChild(t);
+        requestAnimationFrame(() => t.classList.add("show"));
+        setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 220); }, 2200);
+      }
+
+      /* ═══════ THEME ═══════ */
+      (function () {
+        const root = document.documentElement;
+        const toggles = document.querySelectorAll("[id^='theme-toggle']");
+        function applyTheme(theme) {
+          root.setAttribute("data-theme", theme);
+          toggles.forEach((tog) => {
+            const s = tog.querySelector(".icon-sun"), m = tog.querySelector(".icon-moon"), l = tog.querySelector("span");
+            if (theme === "light") { s.style.display = "none"; m.style.display = "inline"; if (l) l.textContent = "Mode Gelap"; }
+            else { s.style.display = "inline"; m.style.display = "none"; if (l) l.textContent = "Mode Terang"; }
+          });
+          try { localStorage.setItem("theme", theme); } catch (e) {}
+        }
+        let saved; try { saved = localStorage.getItem("theme"); } catch (e) {}
+        applyTheme(saved || "dark");
+        toggles.forEach((tog) => {
+          tog.addEventListener("click", () => {
+            tog.classList.remove("is-switching"); void tog.offsetWidth; tog.classList.add("is-switching");
+            applyTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+            tog.blur();
+          });
+        });
+      })();
+
+      /* ═══════ VIEWS ═══════ */
+      function showView(id) {
+        document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
+      }
+      document.getElementById("btnBack").addEventListener("click", () => {
+        document.getElementById("codeNavBtns").style.display = "none";
+        showView("view-list");
+      });
+
+      /* ═══════ SEARCH ═══════ */
+      const searchInput = document.getElementById("searchInput");
+      const searchClear = document.getElementById("searchClear");
+      searchInput.addEventListener("input", () => {
+        searchClear.classList.toggle("visible", searchInput.value.length > 0);
+        filterDefs(searchInput.value);
+      });
+      searchClear.addEventListener("click", () => {
+        const rect = searchInput.getBoundingClientRect();
+        const colors = ["var(--primary)", "var(--muted)", "var(--fg)", "var(--border)"];
+        for (let i = 0; i < 14; i++) {
+          const b = document.createElement("div"); b.className = "paper-bit";
+          const w = 4 + Math.random() * 18, h = 3 + Math.random() * 6;
+          b.style.cssText = `left:${rect.left + Math.random() * rect.width}px;top:${rect.top + Math.random() * rect.height}px;width:${w}px;height:${h}px;background:${colors[i % colors.length]};--tx:${(Math.random()-0.5)*180}px;--ty:${-(40+Math.random()*120)}px;--rot:${(Math.random()-0.5)*540}deg;--sx:${0.2+Math.random()*0.5};--dur:${0.5+Math.random()*0.4}s;`;
+          document.body.appendChild(b); b.addEventListener("animationend", () => b.remove(), { once: true });
+        }
+        searchInput.value = ""; searchClear.classList.remove("visible"); searchInput.focus(); filterDefs("");
+      });
+      function filterDefs(q) {
+        const query = q.toLowerCase();
+        document.querySelectorAll(".def-row").forEach((row) => {
+          const name = row.getAttribute("data-name") || "";
+          row.style.display = !query || name.includes(query) ? "" : "none";
+        });
+      }
+
+      /* ═══════ PYODIDE ═══════ */
+      let pyodide = null, fileContent = "", fileLines = [], allFuncs = [];
+
+      function setLoading(on) {
+        document.querySelectorAll("button, .dropzone, .def-row, .var-chip-btn").forEach((el) => {
+          el.disabled = on;
+          el.style.pointerEvents = on ? "none" : "";
+          el.style.opacity = on ? "0.5" : "";
+        });
+      }
+
+      async function initPyodide() {
+        if (!pyodide) {
+          setLoading(true);
+          showToast("Loading Python parser…");
+          try { pyodide = await loadPyodide(); showToast("Parser siap"); }
+          catch (e) { showToast("Gagal memuat parser", true); }
+          setLoading(false);
+        }
+      }
+      initPyodide();
+
+      /* ═══════ DROPZONE ═══════ */
+      const dropzone = document.getElementById("dropzone"), pyFile = document.getElementById("pyFile"), funcPanel = document.getElementById("funcPanel");
+      dropzone.addEventListener("click", () => pyFile.click());
+      dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
+      dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+      dropzone.addEventListener("drop", (e) => {
+        e.preventDefault(); dropzone.classList.remove("dragover");
+        const f = e.dataTransfer.files[0];
+        if (f && f.name.endsWith(".py")) handleFile(f); else showToast("Hanya file .py yang didukung", true);
+      });
+      document.getElementById("btnNewFile").addEventListener("click", () => pyFile.click());
+      pyFile.addEventListener("change", (e) => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+      function handleFile(file) {
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          fileContent = ev.target.result;
+          fileLines = fileContent.split("\n");
+          dropzone.style.display = "none"; funcPanel.style.display = "";
+          document.getElementById("fileInfo").textContent = file.name + " — " + fileLines.length + " baris";
+          await analyzeCode(fileContent);
+        };
+        reader.readAsText(file);
+      }
+
+      /* ═══════ ANALYZE ═══════ */
+      async function analyzeCode(code) {
+        if (!pyodide) await initPyodide();
+        try {
+          pyodide.globals.set("code_to_parse", code);
+          const raw = pyodide.runPython(`
+import ast, json
+try: tree = ast.parse(code_to_parse)
+except Exception as e: result = {"error": str(e)}
+else:
+    functions = []
+    module_vars = {"def": [], "use": [], "scopes": {}}
+    def scan_scope(node, scope_name, out_vars):
+        for child in ast.walk(node):
+            if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Load):
+                if child.id in out_vars:
+                    out_vars[child.id]["use"].append(child.lineno)
+                    out_vars[child.id]["scopes"][child.lineno] = scope_name
+            if isinstance(child, ast.Assign):
+                for t in child.targets:
+                    if isinstance(t, ast.Name):
+                        if t.id not in out_vars: out_vars[t.id] = {"def": [], "use": [], "scopes": {}}
+                        out_vars[t.id]["def"].append(child.lineno)
+                        out_vars[t.id]["scopes"][child.lineno] = scope_name
+    for node in ast.iter_child_nodes(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            func_name = node.name
+            func_vars = {}
+            for a in node.args.args:
+                if a.arg != "self":
+                    func_vars[a.arg] = {"def": [node.lineno], "use": [], "scopes": {node.lineno: func_name}}
+            scan_scope(node, func_name, func_vars)
+            functions.append({
+                "name": func_name,
+                "start": node.lineno,
+                "end": getattr(node, "end_lineno", node.lineno),
+                "args": [a.arg for a in node.args.args if a.arg != "self"],
+                "vars": func_vars
+            })
+        elif isinstance(node, ast.ClassDef):
+            for child in ast.iter_child_nodes(node):
+                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    func_name = child.name
+                    func_vars = {}
+                    for a in child.args.args:
+                        if a.arg != "self":
+                            func_vars[a.arg] = {"def": [child.lineno], "use": [], "scopes": {child.lineno: func_name}}
+                    scan_scope(child, func_name, func_vars)
+                    functions.append({
+                        "name": func_name,
+                        "start": child.lineno,
+                        "end": getattr(child, "end_lineno", child.lineno),
+                        "args": [a.arg for a in child.args.args if a.arg != "self"],
+                        "vars": func_vars
+                    })
+        else:
+            scan_scope(node, "<module>", module_vars)
+    result = {"error": None, "functions": functions, "module_vars": module_vars}
+json.dumps(result)
+          `);
+          const data = JSON.parse(raw);
+          if (data.error) { showToast("Parse error: " + data.error, true); return; }
+          allFuncs = data.functions;
+          renderDefGrid(allFuncs);
+          showToast(`${allFuncs.length} fungsi ditemukan`);
+        } catch (e) { showToast("Gagal analisis: " + e.message, true); console.error(e); }
+      }
+
+      /* ═══════ RENDER DEF LIST ═══════ */
+      let sortByAlpha = false;
+      document.getElementById("btnSort").addEventListener("click", () => {
+        sortByAlpha = !sortByAlpha;
+        const btn = document.getElementById("btnSort");
+        btn.innerHTML = sortByAlpha ? '<i class="fas fa-arrow-down-wide-short"></i>' : '<i class="fas fa-arrow-down-a-z"></i>';
+        btn.title = sortByAlpha ? "Urutkan baris" : "Urutkan A–Z";
+        renderDefGrid(allFuncs);
+      });
+
+      function renderDefGrid(funcs) {
+        const list = document.getElementById("defGrid");
+        document.getElementById("funcCount").textContent = funcs.length;
+        list.innerHTML = "";
+        if (funcs.length === 0) { list.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i>Tidak ada fungsi ditemukan</div>'; return; }
+
+        const sorted = sortByAlpha
+          ? [...funcs].sort((a, b) => a.name.localeCompare(b.name))
+          : funcs;
+
+        sorted.forEach((fn) => {
+          const varCount = Object.keys(fn.vars).length;
+          const row = document.createElement("div");
+          row.className = "def-row";
+          row.setAttribute("data-name", fn.name);
+          row.innerHTML = `
+            <span class="def-row-icon"><i class="fas fa-caret-right"></i></span>
+            <span class="def-row-name">${fn.name}</span>
+            <span class="def-row-args">${fn.args.length ? "(" + fn.args.join(", ") + ")" : ""}</span>
+            <span class="def-row-meta">${varCount} var · baris ${fn.start}–${fn.end}</span>
+          `;
+          row.addEventListener("click", () => openFuncDetail(fn));
+          list.appendChild(row);
+        });
+      }
+
+      /* ═══════ FUNC DETAIL ═══════ */
+      let activeVar = null, currentFn = null, codeQuery = "";
+      const codeSearchWrap = document.getElementById("codeSearchWrap");
+      const codeSearchInput = document.getElementById("codeSearchInput");
+      const codeSearchClear = document.getElementById("codeSearchClear");
+
+      function openFuncDetail(fn) {
+        activeVar = null; codeQuery = "";
+        currentFn = fn;
+        document.getElementById("funcTitle").textContent = fn.name + "(" + fn.args.join(", ") + ")";
+        document.getElementById("funcSubtitle").textContent = `Baris ${fn.start}–${fn.end} — ${Object.keys(fn.vars).length} variabel`;
+
+        // Var filter chips
+        const bar = document.getElementById("varFilterBar");
+        const varNames = Object.keys(fn.vars).sort();
+        bar.innerHTML = "";
+        if (varNames.length === 0) {
+          bar.innerHTML = '<span style="font-size:0.8125rem; color:var(--muted);">Tidak ada variabel di fungsi ini</span>';
+        }
+        varNames.forEach((v) => {
+          const btn = document.createElement("button");
+          btn.className = "var-chip-btn";
+          btn.textContent = v;
+          btn.addEventListener("click", () => {
+            if (activeVar === v) { activeVar = null; btn.classList.remove("active"); }
+            else { bar.querySelectorAll(".var-chip-btn").forEach((b) => b.classList.remove("active")); activeVar = v; btn.classList.add("active"); }
+            codeQuery = ""; codeSearchInput.value = "";
+            codeSearchClear.classList.remove("visible");
+            renderFuncCode(fn);
+          });
+          bar.appendChild(btn);
+        });
+
+        codeSearchInput.value = "";
+        codeSearchClear.classList.remove("visible");
+        renderFuncCode(fn);
+        showView("view-func");
+      }
+
+      let matchIdx = 0, matchCount = 0;
+
+      function jumpToMatch(dir) {
+        const marks = document.querySelectorAll("#funcCode .highlight-search");
+        if (!marks.length) return;
+        matchCount = marks.length;
+        matchIdx = (matchIdx + dir + matchCount) % matchCount;
+        marks[matchIdx].scrollIntoView({ behavior: "smooth", block: "center" });
+        document.getElementById("codeMatchInfo").textContent = `${matchIdx + 1}/${matchCount}`;
+      }
+
+      codeSearchInput.addEventListener("input", () => {
+        codeQuery = codeSearchInput.value;
+        codeSearchClear.classList.toggle("visible", codeQuery.length > 0);
+        matchIdx = 0; matchCount = 0;
+        if (currentFn) renderFuncCode(currentFn);
+        const hasQ = codeQuery.length > 0;
+        document.getElementById("codeNavBtns").style.display = hasQ ? "" : "none";
+        document.getElementById("codeMatchInfo").style.display = "none";
+        if (hasQ) {
+          requestAnimationFrame(() => {
+            matchCount = document.querySelectorAll("#funcCode .highlight-search").length;
+            if (matchCount > 0) {
+              matchIdx = 0;
+              document.getElementById("codeMatchInfo").style.display = "";
+              document.getElementById("codeMatchInfo").textContent = `1/${matchCount}`;
+              document.querySelectorAll("#funcCode .highlight-search")[0].scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          });
+        }
+      });
+      codeSearchClear.addEventListener("click", () => {
+        codeSearchInput.value = ""; codeQuery = "";
+        codeSearchClear.classList.remove("visible");
+        matchIdx = 0; matchCount = 0;
+        document.getElementById("codeNavBtns").style.display = "none";
+        document.getElementById("codeMatchInfo").style.display = "none";
+        if (currentFn) renderFuncCode(currentFn);
+      });
+      document.getElementById("codeSearchPrev").addEventListener("click", () => jumpToMatch(-1));
+      document.getElementById("codeSearchNext").addEventListener("click", () => jumpToMatch(1));
+
+      function renderFuncCode(fn) {
+        const startLine = fn.start - 1, endLine = fn.end;
+        const lines = fileLines.slice(startLine, endLine);
+
+        const codeEl = document.getElementById("funcCode");
+        codeSearchWrap.style.display = activeVar ? "none" : "";
+        document.getElementById("codeNavBtns").style.display = activeVar || !codeQuery ? "none" : "";
+        document.getElementById("codeMatchInfo").style.display = "none";
+        document.getElementById("codeTitle").textContent = activeVar ? "Kode Terfilter" : "Kode Lengkap";
+
+        if (!activeVar) {
+          // Full code — no filter
+          codeEl.classList.remove("filtered");
+          document.getElementById("codeLineInfo").textContent = `Baris ${fn.start}–${fn.end} (${lines.length} baris)`;
+          const escQ = codeQuery ? codeQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : "";
+          const searchRe = escQ ? new RegExp(escQ, "gi") : null;
+          let html = "";
+          lines.forEach((line, i) => {
+            const absLine = fn.start + i;
+            let text = line.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            if (searchRe) text = text.replace(searchRe, (m) => `<span class="highlight-search">${m}</span>`);
+            html += `<span class="line-number">${String(absLine).padStart(3, " ")}</span>${text}\n`;
+          });
+          codeEl.innerHTML = html || "<span style='color:var(--muted);'>Kode kosong</span>";
+          return;
+        }
+
+        codeEl.classList.add("filtered");
+
+        // Filtered mode — only target lines + ±1 context
+        const v = fn.vars[activeVar];
+        const defSet = new Set(v.def);
+        const useSet = new Set(v.use);
+        const allTargetLines = [...new Set([...v.def, ...v.use])].sort((a, b) => a - b);
+        document.getElementById("codeLineInfo").textContent =
+          `${activeVar} — def: ${defSet.size}×, use: ${useSet.size}×`;
+
+        let html = "";
+        let prevLine = null;
+        allTargetLines.forEach((lineNum) => {
+          const lineIdx = lineNum - 1;
+          const isDef = defSet.has(lineNum);
+          const isUse = useSet.has(lineNum);
+          const start = Math.max(startLine, lineIdx - 1);
+          const end = Math.min(endLine - 1, lineIdx + 1);
+
+          // gap detection — insert separator between chunks
+          if (prevLine !== null && lineNum - prevLine > 1) {
+            html += `<span class="code-sep">---</span>\n`;
+          }
+
+          for (let i = start; i <= end; i++) {
+            const absLine = fn.start + i;
+            const isTarget = i === lineIdx;
+            let text = fileLines[i].replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            if (isTarget) {
+              const regex = new RegExp("\\b" + activeVar.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "g");
+              text = text.replace(regex, `<span class="highlight">${activeVar}</span>`);
+            }
+            const cls = isTarget ? (isDef && isUse ? "code-row line-both" : isDef ? "code-row line-def" : "code-row line-use") : "";
+            const label = isTarget ? (isDef && isUse ? `<span class="line-tag line-tag-both">def·use</span>` : isDef ? `<span class="line-tag line-tag-def">def</span>` : `<span class="line-tag line-tag-use">use</span>`) : "";
+            html += `<span class="${cls}"><span class="line-number">${String(absLine).padStart(3, " ")}${label}</span>${text}</span>\n`;
+          }
+          prevLine = lineNum;
+        });
+
+        codeEl.innerHTML = html || "<span style='color:var(--muted);'>Tidak ada penggunaan</span>";
+      }
+    </script>
+  </body>
+</html>
