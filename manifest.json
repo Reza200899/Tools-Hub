@@ -2,7 +2,7 @@
   "name": "Tools Hub",
   "short_name": "Tools Hub",
   "description": "Kumpulan tools berguna dalam satu tempat.",
-  "start_url": "/Tools Hub.html",
+  "start_url": "/Tools-Hub/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
