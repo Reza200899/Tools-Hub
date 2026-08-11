@@ -287,7 +287,7 @@
       let pyodide = null, fileContent = "", fileLines = [], allFuncs = [];
 
       function setLoading(on) {
-        document.querySelectorAll("button, .dropzone, .def-row, .var-chip-btn").forEach((el) => {
+        document.querySelectorAll("button, .home-btn, .dropzone, .def-row, .var-chip-btn").forEach((el) => {
           el.disabled = on;
           el.style.pointerEvents = on ? "none" : "";
           el.style.opacity = on ? "0.5" : "";
