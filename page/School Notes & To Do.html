@@ -444,9 +444,11 @@
         scrollbar-width: thin;
         scrollbar-color: var(--border) transparent;
       }
-      .desc-split-left,
+      .desc-split-left {
+        width: 40%;
+      }
       .desc-split-right {
-        width: 50%;
+        width: 60%;
       }
       .desc-area {
         width: 100%;
@@ -469,10 +471,11 @@
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent);
       }
 
-      @media (max-width: 700px) {
+      @media (max-width: 768px) {
         .desc-split-layout {
           flex-direction: column;
         }
+        .desc-split-left,
         .desc-split-right {
           width: 100%;
         }
