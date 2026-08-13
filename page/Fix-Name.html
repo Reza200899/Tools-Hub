@@ -845,7 +845,7 @@
                 '<td style="min-width:250px">' +
                 (suggHtml || '<span style="color:var(--muted);font-size:0.75rem">-</span>') +
                 "</td>" +
-                (hasUsername ? '<td style="width:180px;color:var(--muted)">' + esc(m.username) + "</td>" : "") +
+                (hasUsername ? '<td style="width:180px;color:var(--muted)" class="username-click" title="Klik untuk salin username">' + esc(m.username) + "</td>" : "") +
                 '<td style="width:80px"><span class="status-badge ' +
                 statusCls +
                 '">' +
@@ -889,6 +889,24 @@
                 extra.classList.toggle("open");
                 this.style.background = extra.classList.contains("open") ? "var(--accent)" : "";
               }
+            });
+          });
+
+          // Username cell click → copy username
+          tbody.querySelectorAll(".username-click").forEach((cell) => {
+            cell.addEventListener("click", function () {
+              const user = this.textContent.trim();
+              if (!user) return;
+              navigator.clipboard
+                .writeText(user)
+                .then(() => {
+                  showToast("Tersalin: " + user);
+                  this.style.background = "var(--accent)";
+                  setTimeout(() => (this.style.background = ""), 400);
+                })
+                .catch(() => {
+                  showToast("Gagal menyalin", true);
+                });
             });
           });
 
