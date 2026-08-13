@@ -928,7 +928,7 @@ input[type="text"].letter-input.dup {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: var(--card);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -936,7 +936,7 @@ input[type="text"].letter-input.dup {
 }
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
+  scrollbar-color: var(--card) transparent;
 }
 
 /* ═══════════════════════════ 20. RESPONSIVE ═══════════════════════════ */
