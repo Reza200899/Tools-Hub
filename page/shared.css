@@ -642,6 +642,7 @@ th {
   letter-spacing: -0.01em;
 }
 tbody tr {
+  background: color-mix(in srgb, var(--bg) 92%, var(--fg));
   transition: background 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   cursor: pointer;
 }
