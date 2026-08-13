@@ -388,6 +388,12 @@
           box-shadow: none;
           gap: 0;
         }
+        /* Cegah menu ikon naik ke atas saat hover di window normal
+              (override rule hover global yang memakai translateY(-50%)) */
+        .note-actions:hover .note-actions-menu,
+        .note-actions-menu:hover {
+          transform: none;
+        }
       }
       .btn-pin {
         background: transparent;
