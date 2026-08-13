@@ -215,7 +215,6 @@ code {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--border);
   background: var(--card);
   color: var(--fg);
   padding: 8px 16px;
