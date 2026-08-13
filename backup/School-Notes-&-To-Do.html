@@ -671,7 +671,7 @@
       }
       .desc-area:focus {
         border-color: color-mix(in srgb, var(--primary) 55%, transparent);
-        box-shadow: var(--glass-spec-top), 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent), var(--glass-glow);
+        box-shadow: var(--glass-spec-top), var(--glass-glow);
       }
 
       @media (max-width: 768px) {
@@ -1233,7 +1233,6 @@
       }
       .pin-inputs input:focus {
         border-color: var(--primary);
-        box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
       }
       .pin-inputs input.shake {
         animation: pin-shake 0.4s ease;
@@ -1346,8 +1345,7 @@
       #desc-note-subname:focus,
       #input-task:focus {
         border-color: color-mix(in srgb, var(--primary) 55%, transparent);
-        box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
-        transition: border-color var(--dur-fast) var(--ease-ios), box-shadow var(--dur-fast) var(--ease-ios);
+        transition: border-color var(--dur-fast) var(--ease-ios);
       }
       #shortcut-close {
         border-radius: var(--pill-radius);

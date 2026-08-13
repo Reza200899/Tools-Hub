@@ -487,7 +487,6 @@ input[type="text"]:focus,
 select:focus,
 textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 select {
   appearance: none;
@@ -674,7 +673,6 @@ tbody tr.selected:hover {
 }
 .search-wrap input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 .search-clear {
   position: absolute;
@@ -874,7 +872,6 @@ input[type="text"].letter-input {
 }
 input[type="text"].letter-input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 input[type="text"].letter-input.dup {
   border-color: var(--red);
@@ -1180,7 +1177,6 @@ textarea {
 }
 .prompt-box input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 .confirm-actions {
   display: flex;
