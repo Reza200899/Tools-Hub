@@ -825,23 +825,28 @@
         top: 0;
         bottom: 0;
         width: 2px;
-        background: transparent;
+        background: var(--border);
       }
       .task-row .tree-area .vl.half {
-        bottom: 50%;
+        left: 11px;
+        bottom: 70%;
       }
       .task-row .tree-area .hl {
         position: absolute;
         top: 50%;
-        height: 2px;
-        background: transparent;
+        left: 9px;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--border);
+        transform: translateY(-50%);
       }
       .task-item {
         display: flex;
         align-items: center;
         gap: 8px;
         padding: 8px 12px;
-        background: var(--input);
+        background: color-mix(in srgb, var(--bg) 92%, var(--fg));
         border: none;
         border-radius: 6px;
         cursor: default;
@@ -2806,7 +2811,7 @@
           }
           note.tasks = sortTasks(note.tasks);
           container.innerHTML = "";
-          renderTaskRecursive(note.tasks, container, 0);
+          renderTaskRecursive(note.tasks, container, 0, []);
         }
 
         function renderTaskRecursive(arr, parentEl, depth, ancestors) {
@@ -2815,6 +2820,7 @@
           for (let i = 0; i < arr.length; i++) {
             const t = arr[i];
             const isLast = i === arr.length - 1;
+            const isFirst = i === 0;
             const isSub = depth > 0;
 
             const row = document.createElement("div");
@@ -2836,24 +2842,25 @@
                   treeArea.appendChild(vl);
                 }
               }
-              // Connector: vertical (top to middle) + horizontal (middle to right)
-              const cx = (depth - 1) * TREE_W + Math.floor(TREE_W / 2) - 1;
-              const vline = document.createElement("div");
-              vline.className = "vl half";
-              vline.style.left = cx + "px";
-              treeArea.appendChild(vline);
+              // Connector: vertical (top to middle) for first subtask only + horizontal (middle to right)
+              if (isFirst) {
+                const vline = document.createElement("div");
+                vline.className = "vl half";
+                vline.style.left = "11px";
+                treeArea.appendChild(vline);
+              }
               const hline = document.createElement("div");
               hline.className = "hl";
-              hline.style.left = cx + "px";
-              hline.style.width = "14px";
+              hline.style.left = "9.5px";
+              hline.style.width = "5px";
               treeArea.appendChild(hline);
               // Vertical continuation if not last — panjangkan ke bawah (cover gap antar row)
               if (!isLast) {
                 const vcont = document.createElement("div");
                 vcont.className = "vl";
-                vcont.style.left = cx + "px";
-                vcont.style.top = "50%";
-                vcont.style.bottom = "-12px"; // cover gap antar task
+                vcont.style.left = "11px";
+                vcont.style.top = "70%";
+                vcont.style.bottom = "-17px"; // cover gap antar task
                 treeArea.appendChild(vcont);
               }
             }
