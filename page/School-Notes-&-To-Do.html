@@ -365,6 +365,30 @@
         pointer-events: auto;
         transform: translateY(-50%) translateX(0);
       }
+
+      /* ── Ungroup: lebar ≥ 1000px (window normal/restored, bukan side-by-side)
+            3 tombol tampil apa adanya tanpa grouping elipsis ── */
+      @media (min-width: 1000px) {
+        .col-del {
+          width: 110px;
+        }
+        .btn-ellipsis {
+          display: none;
+        }
+        .note-actions-menu {
+          position: static;
+          transform: none;
+          opacity: 1;
+          visibility: visible;
+          pointer-events: auto;
+          background: transparent;
+          border: none;
+          border-radius: 0;
+          padding: 0;
+          box-shadow: none;
+          gap: 0;
+        }
+      }
       .btn-pin {
         background: transparent;
         border: none;
