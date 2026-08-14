@@ -425,13 +425,17 @@
         transform-origin: center;
       }
       .btn-pin svg.anim,
-      .btn-pin i.anim {
-        transition: transform 0.35s ease-out;
+      .btn-pin i.anim,
+      .btn-pin i {
+        transition: transform 0.18s ease-out;
       }
       .btn-pin:hover {
         color: var(--primary);
         background: rgba(59, 130, 246, 0.1);
         transform: scale(1.15);
+      }
+      .btn-pin.is-pinned i {
+        transform: rotate(30deg);
       }
       .btn-pin.is-pinned {
         color: var(--primary);
@@ -548,9 +552,27 @@
       }
       .desc-split-left {
         width: 40%;
+        flex-shrink: 0;
+        opacity: 1;
+        transition:
+          width 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
+          opacity 0.25s ease;
       }
       .desc-split-right {
         width: 60%;
+        transition: width 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+      }
+      .desc-split-layout.tasks-hidden {
+        gap: 0;
+      }
+      .desc-split-layout.tasks-hidden .desc-split-left {
+        width: 0;
+        opacity: 0;
+        overflow: hidden;
+        pointer-events: none;
+      }
+      .desc-split-layout.tasks-hidden .desc-split-right {
+        width: 100%;
       }
       .desc-area {
         width: 100%;
@@ -824,6 +846,10 @@
       }
       .task-sub-wrap.collapsed .task-sub-inner {
         opacity: 0;
+      }
+      .task-toggle-ico {
+        font-size: 0.8rem;
+        line-height: 1;
       }
       .btn-expand {
         transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
@@ -1353,12 +1379,16 @@
             <div class="desc-split-right">
               <div style="margin-bottom: 8px; font-size: 0.875rem; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 8px">
                 <span>Deskripsi / Catatan Tambahan</span>
+                <button id="btn-task-toggle" type="button" style="background:var(--row-hover);color:var(--muted);border:none;border-radius:50%;width:20px;height:20px;font-size:0.7rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;transition:background 0.2s" title="Sembunyikan/tampilkan List Pengerjaan"><i class="far fa-eye task-toggle-ico"></i></button>
                 <button id="btn-shortcut-info" type="button" style="background:var(--row-hover);color:var(--muted);border:none;border-radius:50%;width:20px;height:20px;font-size:0.7rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;transition:background 0.2s" title="Lihat semua shortcut">i</button>
               </div>
               <textarea id="desc-input" class="desc-area" placeholder="Ketik deskripsi lengkap di sini... otomatis tersimpan saat Anda mengetik."></textarea>
             </div>
             <div class="desc-split-left">
-              <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 8px; margin-bottom: 8px" class="section-title"><span>List Pengerjaan</span><span id="task-count" style="font-size: 0.875rem; font-weight: 500; color: var(--primary)"></span></div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 8px; margin-bottom: 8px" class="section-title">
+                <span>List Pengerjaan</span>
+                <span id="task-count" style="font-size: 0.875rem; font-weight: 500; color: var(--primary)"></span>
+              </div>
               <div id="task-container">
                 <form id="form-task" class="form-inline">
                   <input type="text" id="input-task" placeholder="Tambah tahapan pengerjaan..." required autocomplete="off" />
@@ -1984,7 +2014,7 @@
               <td class="col-nama">${escapeHtml(n.text)}${n.subname ? ` <span style="font-size:0.8rem;color:var(--muted);margin-left:6px">${escapeHtml(n.subname)}</span>` : ""}</td>
               <td class="col-date">${n.date}</td>
               <td class="col-progress">${progressHtml(n)}</td>
-              <td class="col-pin"><button class="btn-pin${n.pinned ? " is-pinned" : ""}" data-id="${n.id}" title="${n.pinned ? "Unpin" : "Pin"}"><i class="fad fa-thumbtack"${n.pinned ? ' style="transform:rotate(30deg)"' : ""}></i></button></td>
+              <td class="col-pin"><button class="btn-pin${n.pinned ? " is-pinned" : ""}" data-id="${n.id}" title="${n.pinned ? "Unpin" : "Pin"}"><i class="fad fa-thumbtack"></i></button></td>
               <td class="col-check">
                 <span class="cb-wrap">
                   <input type="checkbox" data-id="${n.id}" class="cb-done">
@@ -2390,17 +2420,10 @@
               note.pinned = !note.pinned;
               note.updatedAt = formatDate(new Date());
               saveData();
-              renderNotes();
-              // Animasi tik jarum jam (transisi diaktifkan dinamis)
-              const newBtn = document.querySelector(`.btn-pin[data-id="${id}"]`);
-              if (newBtn) {
-                const pin = newBtn.querySelector("i");
-                pin.style.transition = "transform 0.35s ease-out";
-                pin.style.transform = note.pinned ? "rotate(30deg)" : "rotate(0deg)";
-                setTimeout(() => {
-                  pin.style.transition = "";
-                }, 400);
-              }
+              // Toggle class di-place (CSS handles rotate transition) — no re-render
+              pinBtn.classList.toggle("is-pinned", note.pinned);
+              pinBtn.title = note.pinned ? "Unpin" : "Pin";
+              pinBtn.closest("tr").classList.toggle("row-pinned", note.pinned);
               showToast(note.pinned ? "Catatan di-pin" : "Pin dilepas");
               return;
             }
@@ -3180,6 +3203,16 @@
         loadCatOrder();
         updateStorageInfo();
         showHome();
+
+        // === Task container collapse (default open) ===
+        const taskToggle = document.getElementById("btn-task-toggle");
+        const taskToggleIco = taskToggle.querySelector(".task-toggle-ico");
+        const descSplit = document.querySelector(".desc-split-layout");
+        taskToggle.addEventListener("click", () => {
+          const hidden = descSplit.classList.toggle("tasks-hidden");
+          taskToggleIco.classList.toggle("fa-eye", !hidden);
+          taskToggleIco.classList.toggle("fa-eye-slash", hidden);
+        });
 
         // Shortcut info modal
         const shortcutModal = document.getElementById("shortcut-modal");
