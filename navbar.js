@@ -34,17 +34,30 @@
     { label: "OCR", href: "page/OCR.html", icon: '<rect x="8" y="8" width="32" height="32" rx="4" fill="#e0f2fe"/><circle cx="24" cy="22" r="8" fill="none" stroke="#0284c7" stroke-width="2.5"/><circle cx="24" cy="22" r="3" fill="#0284c7"/><rect x="14" y="6" width="6" height="4" rx="1" fill="#38bdf8"/><rect x="28" y="6" width="6" height="4" rx="1" fill="#38bdf8"/><rect x="10" y="36" width="28" height="3" rx="1.5" fill="#7dd3fc"/>' },
   ];
 
-  const items = TOOLS
-    .slice()
-    .sort((a, b) => a.label.localeCompare(b.label, "id"))
-    .map((t) => {
-      const active = current && t.href.split("/").pop() === current ? " active" : "";
-      return `<a class="nav-item${active}" href="${ROOT}${t.href}" title="${t.label}">
-        <span class="nav-ico"><svg viewBox="0 0 48 48">${t.icon}</svg></span>
-        <span class="label">${t.label}</span>
-      </a>`;
-    })
-    .join("");
+  function getHidden() {
+    try {
+      return JSON.parse(localStorage.getItem("tools-hidden") || "[]");
+    } catch {
+      return [];
+    }
+  }
+  function buildItems() {
+    const hidden = getHidden();
+    const items = TOOLS
+      .slice()
+      .sort((a, b) => a.label.localeCompare(b.label, "id"))
+      .filter((t) => hidden.indexOf(t.label) === -1)
+      .map((t) => {
+        const active = current && t.href.split("/").pop() === current ? " active" : "";
+        return `<a class="nav-item${active}" href="${ROOT}${t.href}" title="${t.label}">
+          <span class="nav-ico"><svg viewBox="0 0 48 48">${t.icon}</svg></span>
+          <span class="label">${t.label}</span>
+        </a>`;
+      })
+      .join("");
+    const nav = mount.querySelector(".nav-items");
+    if (nav) nav.innerHTML = items;
+  }
 
   mount.className = "navbar";
   mount.innerHTML = `
@@ -54,8 +67,12 @@
       </svg>
       <span>Beranda</span>
     </a>
-    <nav class="nav-items">${items}</nav>
+    <nav class="nav-items"></nav>
   `;
+
+  // Isi item (sudah difilter hide) + sync saat berubah
+  buildItems();
+  window.addEventListener("tools-hidden-change", buildItems);
 
   // Burger (muncul < 1048px, toggle sidebar)
   const burger = document.createElement("button");

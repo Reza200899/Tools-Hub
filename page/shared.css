@@ -1407,3 +1407,61 @@ body:has(#navbar) .container {
     margin: 0 auto;
   }
 }
+
+/* ═══════════════════════════ HIDE TOOL ═════════════════════════ */
+.hide-btn {
+  position: absolute;
+  top: 8px;
+  right: 40px;
+  z-index: 1;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, transform 0.15s;
+}
+.tool-card:hover .hide-btn {
+  opacity: 1;
+}
+.hide-btn:hover {
+  color: #f87171;
+  transform: scale(1.15);
+}
+.hide-btn svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+.hide-btn.show-btn {
+  color: var(--accent);
+}
+.hide-btn.show-btn:hover {
+  color: var(--accent);
+  transform: scale(1.15);
+}
+.view-btn .badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--primary-fg);
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+.view-btn {
+  position: relative;
+}
