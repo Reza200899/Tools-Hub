@@ -1338,8 +1338,11 @@ textarea {
   background: var(--bg);
   transition: background 0.2s;
 }
+[data-theme="dark"] .nav-ico {
+  background: color-mix(in srgb, var(--bg) 92%, var(--fg));
+}
 .nav-item:hover .nav-ico {
-  background: color-mix(in srgb, var(--primary-fg) 18%, transparent);
+  background: color-mix(in srgb, var(--accent) 80%, transparent);
 }
 .nav-ico svg {
   width: 26px;
