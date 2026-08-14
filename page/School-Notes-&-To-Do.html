@@ -805,6 +805,33 @@
         flex-direction: column;
         gap: 6px;
       }
+      .task-sub-wrap {
+        overflow: hidden;
+        height: auto;
+        transition: height 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+        will-change: height;
+      }
+      .task-sub-wrap.collapsed {
+        height: 0;
+      }
+      .task-sub-inner {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        opacity: 1;
+        transition: opacity 0.3s ease;
+      }
+      .task-sub-wrap.collapsed .task-sub-inner {
+        opacity: 0;
+      }
+      .btn-expand {
+        transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+        transform: rotate(90deg);
+      }
+      .btn-expand.is-collapsed {
+        transform: rotate(0deg);
+      }
       .task-row {
         display: flex;
         align-items: stretch;
@@ -2814,6 +2841,29 @@
           renderTaskRecursive(note.tasks, container, 0, []);
         }
 
+        // Smooth height accordion (JS-measured, avoids janky grid-rows)
+        function setCollapsed(wrap, collapsed) {
+          if (!wrap) return;
+          const inner = wrap.firstElementChild;
+          if (collapsed) {
+            wrap.style.height = wrap.scrollHeight + "px";
+            void wrap.offsetHeight; // reflow to lock start height
+            wrap.classList.add("collapsed");
+            wrap.style.height = "0px";
+          } else {
+            wrap.style.height = getComputedStyle(wrap).height; // lock current (0) as start
+            void wrap.offsetHeight; // reflow
+            wrap.classList.remove("collapsed");
+            wrap.style.height = wrap.scrollHeight + "px";
+          }
+          const done = () => {
+            wrap.style.height = collapsed ? "0px" : "auto";
+            wrap.removeEventListener("transitionend", done);
+          };
+          wrap.addEventListener("transitionend", done, { once: true });
+          setTimeout(done, 360); // fallback
+        }
+
         function renderTaskRecursive(arr, parentEl, depth, ancestors) {
           ancestors = ancestors || [];
           const TREE_W = 12; // px per level
@@ -2872,7 +2922,7 @@
             div.style.flex = "1";
             div.dataset.id = t.id;
             div.innerHTML = `
-              ${isSub ? "" : t.subtasks && t.subtasks.length ? '<span class="btn-expand" data-id="' + t.id + '" style="cursor:pointer;font-size:0.7rem;width:16px;text-align:center;flex-shrink:0;color:var(--muted);user-select:none">' + (t.collapsed ? "▶" : "▼") + "</span>" : '<span style="width:16px;flex-shrink:0"></span>'}
+              ${isSub ? "" : t.subtasks && t.subtasks.length ? '<span class="btn-expand' + (t.collapsed ? " is-collapsed" : "") + '" data-id="' + t.id + '" style="cursor:pointer;font-size:0.7rem;width:16px;text-align:center;flex-shrink:0;color:var(--muted);user-select:none">▶</span>' : '<span style="width:16px;flex-shrink:0"></span>'}
               <span class="drag-handle" title="Seret untuk urutkan">⠿</span>
               <button class="btn-task btn-task-done" title="${t.done ? "Batal selesai" : "Tandai selesai"}">${t.done ? "↩" : "✓"}</button>
               <span class="task-text">${escapeHtml(t.text)}</span>
@@ -2997,7 +3047,7 @@
               });
             });
 
-            // Expand / Collapse toggle
+            // Expand / Collapse toggle — animate via class flip (no full re-render)
             const expBtn = div.querySelector(".btn-expand");
             if (expBtn) {
               expBtn.addEventListener("click", (e) => {
@@ -3006,7 +3056,9 @@
                 const note2 = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
                 if (note2) note2.updatedAt = formatDate(new Date());
                 saveData();
-                renderTasks();
+                setCollapsed(div.parentElement.nextElementSibling, t.collapsed);
+                expBtn.textContent = "▶";
+                expBtn.classList.toggle("is-collapsed", t.collapsed);
               });
             }
 
@@ -3089,12 +3141,18 @@
             row.appendChild(div);
             parentEl.appendChild(row);
 
-            // Render subtasks — skip if collapsed
-            if (t.subtasks && t.subtasks.length && !t.collapsed) {
+            // Render subtasks — wrap for accordion animation
+            if (t.subtasks && t.subtasks.length) {
               t.subtasks = sortTasks(t.subtasks);
+              const subWrap = document.createElement("div");
+              subWrap.className = "task-sub-wrap" + (t.collapsed ? " collapsed" : "");
+              const subInner = document.createElement("div");
+              subInner.className = "task-sub-inner";
               const nextAncestors = ancestors.slice();
               nextAncestors[depth] = !isLast;
-              renderTaskRecursive(t.subtasks, parentEl, depth + 1, nextAncestors);
+              renderTaskRecursive(t.subtasks, subInner, depth + 1, nextAncestors);
+              subWrap.appendChild(subInner);
+              parentEl.appendChild(subWrap);
             }
           }
         }
