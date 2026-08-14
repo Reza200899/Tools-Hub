@@ -1400,7 +1400,7 @@ textarea {
   .navbar.open .nav-item .label { opacity: 1; }
   .nav-item .label,
   .nav-brand span { opacity: 0; }
-  body:has(#navbar) .container { margin-left: 0; padding-top: 65px; }
+  body:has(#navbar) .container { margin-left: 0; padding-top: 70px; }
   .navbar.open ~ .container { margin-left: 220px; }
 }
 
