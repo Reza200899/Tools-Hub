@@ -217,6 +217,11 @@ code {
 .topbar-actions .theme-toggle {
   flex-shrink: 0;
 }
+@media (max-width: 1048px) {
+  .topbar-row {
+    flex-wrap: nowrap;
+  }
+}
 
 /* ═══════════════════════════ 5. HOME BTN ═══════════════════════════ */
 .home-btn {
