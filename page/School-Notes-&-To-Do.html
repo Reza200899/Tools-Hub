@@ -2420,10 +2420,7 @@
               note.pinned = !note.pinned;
               note.updatedAt = formatDate(new Date());
               saveData();
-              // Toggle class di-place (CSS handles rotate transition) — no re-render
-              pinBtn.classList.toggle("is-pinned", note.pinned);
-              pinBtn.title = note.pinned ? "Unpin" : "Pin";
-              pinBtn.closest("tr").classList.toggle("row-pinned", note.pinned);
+              renderNotes();
               showToast(note.pinned ? "Catatan di-pin" : "Pin dilepas");
               return;
             }
