@@ -73,6 +73,8 @@
   // Isi item (sudah difilter hide) + sync saat berubah
   buildItems();
   window.addEventListener("tools-hidden-change", buildItems);
+  // Enable transisi setelah render pertama (cegah slide-from-left saat load)
+  setTimeout(() => mount.classList.add("loaded"), 50);
 
   // Burger (muncul < 1048px, toggle sidebar)
   const burger = document.createElement("button");
@@ -82,8 +84,32 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
   document.body.appendChild(burger);
   burger.addEventListener("click", () => mount.classList.toggle("open"));
-  burger.addEventListener("mouseenter", () => mount.classList.add("open"));
-  mount.addEventListener("mouseleave", () => mount.classList.remove("open"));
+  let overBurger = false,
+    overNav = false,
+    closeTimer = null;
+  function scheduleClose() {
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(() => {
+      if (!overBurger && !overNav) mount.classList.remove("open");
+    }, 120);
+  }
+  burger.addEventListener("mouseenter", () => {
+    clearTimeout(closeTimer);
+    overBurger = true;
+    mount.classList.add("open");
+  });
+  burger.addEventListener("mouseleave", () => {
+    overBurger = false;
+    scheduleClose();
+  });
+  mount.addEventListener("mouseenter", () => {
+    clearTimeout(closeTimer);
+    overNav = true;
+  });
+  mount.addEventListener("mouseleave", () => {
+    overNav = false;
+    scheduleClose();
+  });
   mount.querySelectorAll(".nav-item").forEach((a) =>
     a.addEventListener("click", () => mount.classList.remove("open"))
   );

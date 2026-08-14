@@ -327,6 +327,7 @@
         </div>
       </div>
 
+      <div class="filter-status" id="filter-status"></div>
       <div class="toolbar">
         <div class="search-wrap">
           <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -561,6 +562,11 @@
           fb.textContent = fn;
           fb.style.display = fn > 0 ? "" : "none";
           btnHidden.classList.toggle("active", hiddenOnly);
+          const fs = document.getElementById("filter-status");
+          if (hiddenOnly) fs.textContent = "Filter aktif: Tool tersembunyi";
+          else if (btnFav.classList.contains("active")) fs.textContent = "Filter aktif: Favorit";
+          else if (search.value.trim()) fs.textContent = "Filter aktif: Pencarian";
+          else fs.textContent = "";
         }
         function toggleHiddenBar() {
           hiddenOnly = !hiddenOnly;
