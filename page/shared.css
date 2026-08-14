@@ -1217,7 +1217,7 @@ textarea {
   padding: 10px 14px;
   border-radius: 10px;
   border: 1px ;
-  background: var(--input);
+  /* background: var(--input); */
   color: var(--fg);
   font-size: 0.9375rem;
   outline: none;

@@ -1113,7 +1113,7 @@
       .pin-box {
         background: var(--card);
         color: var(--fg);
-        border: 1px solid var(--border);
+        border: 1px solid transparent;
         border-radius: 14px;
         padding: 24px 28px;
         max-width: 380px;
@@ -1140,8 +1140,8 @@
         font-size: 1.25rem;
         font-weight: 700;
         border-radius: 10px;
-        border: 1.5px solid var(--border);
-        background: var(--input);
+        border: 1.5px solid transparent;
+        background: color-mix(in srgb, var(--bg) 92%, var(--fg));
         color: var(--fg);
         outline: none;
         transition:
@@ -2420,7 +2420,17 @@
               note.pinned = !note.pinned;
               note.updatedAt = formatDate(new Date());
               saveData();
-              renderNotes();
+              if (note.pinned) {
+                // Animate rotation in-place (same node) + pindah ke atas
+                const tr = pinBtn.closest("tr");
+                pinBtn.classList.add("is-pinned");
+                pinBtn.title = "Unpin";
+                tr.classList.add("row-pinned");
+                tr.parentElement.insertBefore(tr, tr.parentElement.firstElementChild);
+              } else {
+                // Restore urutan (animated rotate hilang, tapi posisi kembali benar)
+                renderNotes();
+              }
               showToast(note.pinned ? "Catatan di-pin" : "Pin dilepas");
               return;
             }
