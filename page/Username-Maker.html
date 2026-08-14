@@ -31,45 +31,29 @@
         margin: 0;
       }
       /* Column widths */
+      table { table-layout: fixed !important; width: 100% !important; }
+      td, th { overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
       .col-no {
-        width: 36px;
+        width: 36px !important;
         text-align: center;
       }
-      .col-nama {
-        width: 26%;
-        min-width: 0;
-      }
-      .col-prefix {
-        width: 12%;
-        min-width: 0;
-      }
-      .col-role {
-        width: 12%;
-        min-width: 0;
-      }
-      .col-depan {
-        width: 12%;
-        min-width: 0;
-      }
-      .col-belakang {
-        width: 18%;
-        min-width: 0;
-      }
-      .col-username {
-        width: 16%;
-        min-width: 0;
-      }
+      .col-nama,
+      .col-prefix,
+      .col-role,
+      .col-depan,
+      .col-belakang,
+      .col-username,
       .col-email {
-        width: 18%;
+        width: calc((100% - 122px) / 7) !important;
         min-width: 0;
       }
       .col-copy {
-        width: 54px;
+        width: 54px !important;
         text-align: center;
         min-width: 54px;
       }
       .col-del {
-        width: 32px;
+        width: 32px !important;
         text-align: center;
         min-width: 32px;
       }
