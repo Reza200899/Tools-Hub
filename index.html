@@ -625,7 +625,8 @@
             toggle.classList.add("is-switching");
             setTimeout(() => toggle.classList.remove("is-switching"), 400);
             const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
-            applyTheme(next);
+            if (window.triggerThemeSplash) window.triggerThemeSplash(toggle, next, applyTheme);
+            else applyTheme(next);
           };
 
           toggle.addEventListener("click", window.toggleTheme);
@@ -643,6 +644,7 @@
       }
     </script>
   </div>
+    <script src="theme-splash.js"></script>
     <script src="navbar.js"></script>
 </body>
 </html>

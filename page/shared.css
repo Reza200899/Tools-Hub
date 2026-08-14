@@ -1476,3 +1476,30 @@ body:has(#navbar) .container {
   min-height: 1.2em;
   margin-bottom: 8px;
 }
+
+/* ═══════════════════════════ THEME SPLASH ═════════════════════════ */
+#theme-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  clip-path: circle(0px at var(--x, 50%) var(--y, 50%));
+}
+#theme-splash.run {
+  animation: theme-splash-expand 0.6s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+@keyframes theme-splash-expand {
+  0% {
+    opacity: 1;
+    clip-path: circle(0px at var(--x, 50%) var(--y, 50%));
+  }
+  55% {
+    opacity: 1;
+    clip-path: circle(150% at var(--x, 50%) var(--y, 50%));
+  }
+  100% {
+    opacity: 0;
+    clip-path: circle(150% at var(--x, 50%) var(--y, 50%));
+  }
+}

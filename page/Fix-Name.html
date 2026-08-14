@@ -571,8 +571,9 @@
             void tgl.offsetWidth;
             tgl.classList.add("is-switching");
             const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
-            applyTheme(next);
             tgl.blur();
+            if (window.triggerThemeSplash) window.triggerThemeSplash(tgl, next, applyTheme);
+            else applyTheme(next);
           });
           function applyTheme(t) {
             root.setAttribute("data-theme", t);
@@ -1081,6 +1082,7 @@
         }
       })();
     </script>
-      <script src="../navbar.js"></script>
+      <script src="../theme-splash.js"></script>
+  <script src="../navbar.js"></script>
   </body>
 </html>

@@ -274,7 +274,9 @@
       toggle.addEventListener("click",()=>{
         toggle.classList.remove("is-switching"); void toggle.offsetWidth; toggle.classList.add("is-switching");
         const c = root.getAttribute("data-theme")||"light";
-        applyTheme(c==="dark"?"light":"dark"); toggle.blur();
+        const next = c==="dark"?"light":"dark"; toggle.blur();
+        if (window.triggerThemeSplash) window.triggerThemeSplash(toggle, next, applyTheme);
+        else applyTheme(next);
       });
 
       // === Views ===
@@ -627,6 +629,7 @@
       }
     })();
     </script>
-      <script src="../navbar.js"></script>
+      <script src="../theme-splash.js"></script>
+  <script src="../navbar.js"></script>
   </body>
 </html>

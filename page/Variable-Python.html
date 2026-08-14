@@ -241,8 +241,10 @@
         toggles.forEach((tog) => {
           tog.addEventListener("click", () => {
             tog.classList.remove("is-switching"); void tog.offsetWidth; tog.classList.add("is-switching");
-            applyTheme(root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+            const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
             tog.blur();
+            if (window.triggerThemeSplash) window.triggerThemeSplash(tog, next, applyTheme);
+            else applyTheme(next);
           });
         });
       })();
@@ -584,6 +586,7 @@ json.dumps(result)
         codeEl.innerHTML = html || "<span style='color:var(--muted);'>Tidak ada penggunaan</span>";
       }
     </script>
-      <script src="../navbar.js"></script>
+      <script src="../theme-splash.js"></script>
+  <script src="../navbar.js"></script>
   </body>
 </html>

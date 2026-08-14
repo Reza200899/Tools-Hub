@@ -518,8 +518,10 @@
             toggle.classList.remove("is-switching");
             void toggle.offsetWidth;
             toggle.classList.add("is-switching");
-            apply(root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+            const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
             toggle.blur();
+            if (window.triggerThemeSplash) window.triggerThemeSplash(toggle, next, apply);
+            else apply(next);
           });
         })();
 
@@ -1234,6 +1236,7 @@
         window.addEventListener("resize", applyLayout);
       })();
     </script>
-      <script src="../navbar.js"></script>
+      <script src="../theme-splash.js"></script>
+  <script src="../navbar.js"></script>
   </body>
 </html>

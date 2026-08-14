@@ -32,7 +32,12 @@
     void toggle.offsetWidth;
     toggle.classList.add("is-switching");
     const current = root.getAttribute("data-theme") || "dark";
-    applyTheme(current === "dark" ? "light" : "dark");
+    const next = current === "dark" ? "light" : "dark";
     toggle.blur();
+    if (window.triggerThemeSplash) {
+      window.triggerThemeSplash(toggle, next, applyTheme);
+    } else {
+      applyTheme(next);
+    }
   });
 })();

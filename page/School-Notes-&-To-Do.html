@@ -1421,8 +1421,10 @@
           void toggle.offsetWidth;
           toggle.classList.add("is-switching");
           const current = root.getAttribute("data-theme") || "light";
-          applyTheme(current === "dark" ? "light" : "dark");
+          const next = current === "dark" ? "light" : "dark";
           toggle.blur();
+          if (window.triggerThemeSplash) window.triggerThemeSplash(toggle, next, applyTheme);
+          else applyTheme(next);
         });
 
         // === Data Model ===
@@ -3134,6 +3136,7 @@
         });
       })();
     </script>
-      <script src="../navbar.js"></script>
+      <script src="../theme-splash.js"></script>
+  <script src="../navbar.js"></script>
   </body>
 </html>
