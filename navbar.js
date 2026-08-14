@@ -1,6 +1,10 @@
 // Shared sidebar — dipakai index.html + semua page/*.html.
 // Edit di sini → apply ke semua. Icon ngikutin Tools Hub (sama persis).
 (function () {
+  // Cegah browser restore posisi scroll lama (bikin page "geser" saat refresh)
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  window.scrollTo(0, 0);
+
   const mount = document.getElementById("navbar");
   if (!mount) return;
 
@@ -44,11 +48,11 @@
 
   mount.className = "navbar";
   mount.innerHTML = `
-    <a class="nav-brand" href="${ROOT}index.html" title="Tools Hub">
+    <a class="nav-brand" href="${ROOT}index.html" title="Beranda">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
       </svg>
-      <span>Tools Hub</span>
+      <span>Beranda</span>
     </a>
     <nav class="nav-items">${items}</nav>
   `;

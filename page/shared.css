@@ -959,6 +959,12 @@ input[type="text"].letter-input.dup {
   scrollbar-width: thin;
   scrollbar-color: var(--card) transparent;
 }
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: var(--muted) !important;
+}
+:root[data-theme="light"] * {
+  scrollbar-color: var(--muted) transparent !important;
+}
 
 /* ═══════════════════════════ 20. RESPONSIVE ═══════════════════════════ */
 @media (max-width: 480px) {
@@ -1270,6 +1276,7 @@ textarea {
 .nav-brand {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 12px;
   padding: 10px;
   margin-top: 0;
@@ -1286,13 +1293,14 @@ textarea {
   height: 22px;
   flex-shrink: 0;
   color: var(--accent);
+  margin-left: 3px;
 }
 .nav-brand span {
-  opacity: 0;
-  transition: opacity 0.2s ease 0.05s;
+  display: none;
 }
-.navbar:hover .nav-brand span {
-  opacity: 1;
+.navbar:hover .nav-brand span,
+.navbar.open .nav-brand span {
+  display: inline;
 }
 
 .nav-items {
