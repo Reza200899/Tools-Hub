@@ -1407,7 +1407,7 @@ body:has(#navbar) .container {
 }
 @media (min-width: 1049px) {
   body:has(#navbar) .container {
-    padding-left: 64px;
+    padding-left: 96px;
     margin: 0 auto;
   }
 }
