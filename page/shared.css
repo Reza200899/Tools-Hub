@@ -1342,7 +1342,7 @@ textarea {
   background: color-mix(in srgb, var(--bg) 92%, var(--fg));
 }
 .nav-item:hover .nav-ico {
-  background: color-mix(in srgb, var(--icon-bg) 80%, transparent);
+  background: color-mix(in srgb, var(--icon-bg) 18%, transparent);
 }
 .nav-ico svg {
   width: 26px;
