@@ -18,14 +18,14 @@
       ol li { margin-bottom: 6px; }
       .bookmarklet-wrap { text-align: center; padding: 20px; }
       .bookmarklet-link {
-        display: inline-block; padding: 12px 24px; border-radius: 8px;
+        display: inline-block; padding: 12px 24px; border-radius: 30px;
         background: var(--primary); color: var(--primary-fg); font-weight: 600;
         font-size: 1rem; text-decoration: none; transition: all .3s;
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       }
       .bookmarklet-link:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
       .code-block {
-        background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+        background: var(--code-bg); border: 1px solid var(--border); border-radius: 30px;
         padding: 12px 16px; font-family: ui-monospace, monospace; font-size: .7rem;
         overflow-x: auto; word-break: break-all; white-space: pre-wrap;
         color: var(--muted); margin: 0; max-height: 200px; overflow-y: auto;
@@ -33,7 +33,7 @@
       }
       .code-block:hover { border-color: var(--primary); }
       .copy-btn {
-        display: inline-block; margin-top: 8px; padding: 6px 14px; border-radius: 6px;
+        display: inline-block; margin-top: 8px; padding: 6px 14px; border-radius: 30px;
         background: var(--card); border: 1px solid var(--border); color: var(--fg);
         font-size: .75rem; font-weight: 500; cursor: pointer;
         transition: all .3s;
@@ -152,11 +152,11 @@
     var d=document.createElement('div');
     d.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45)';
     var b=document.createElement('div');
-    b.style.cssText='background:#1e293b;color:#f1f5f9;border:1px solid #334155;border-radius:14px;padding:24px 28px;max-width:380px;width:90%;font:500 14px/1.5 system-ui,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.35);text-align:center';
+    b.style.cssText='background:#1e293b;color:#f1f5f9;border:1px solid #334155;border-radius: 30px;padding:24px 28px;max-width:380px;width:90%;font:500 14px/1.5 system-ui,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.35);text-align:center';
     b.textContent=msg;
     var bt=document.createElement('button');
     bt.textContent=ok||'OK';
-    bt.style.cssText='margin-top:16px;padding:8px 24px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font:500 13px/1 system-ui;cursor:pointer';
+    bt.style.cssText='margin-top:16px;padding:8px 24px;border:none;border-radius: 30px;background:#3b82f6;color:#fff;font:500 13px/1 system-ui;cursor:pointer';
     bt.onclick=function(){d.remove()};
     b.appendChild(bt);d.appendChild(b);document.body.appendChild(d);
   }

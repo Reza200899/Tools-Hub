@@ -79,7 +79,7 @@ body::before,
 body::after {
   content: "";
   position: fixed;
-  border-radius: 50%;
+  border-radius: 30px;
   filter: blur(80px);
   pointer-events: none;
   z-index: 0;
@@ -169,7 +169,7 @@ code {
   font-family: "SF Mono", "Menlo", "Monaco", "Consolas", monospace;
   background: var(--code-bg);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: 30px;
   font-size: 0.8125em;
 }
 .text-muted {
@@ -231,7 +231,7 @@ code {
   background: var(--card);
   color: var(--fg);
   padding: 15px;
-  border-radius: 980px;
+  border-radius: 30px;
   font-family: inherit;
   font-size: 0;
   font-weight: 400;
@@ -269,7 +269,7 @@ code {
   background: var(--card);
   color: var(--fg);
   padding: 15px;
-  border-radius: 980px;
+  border-radius: 30px;
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
@@ -317,7 +317,7 @@ code {
 /* ═══════════════════════════ 6. PANEL ═══════════════════════════ */
 .panel {
   background: var(--card);
-  border-radius: 18px;
+  border-radius: 30px;
   padding: 24px;
   margin-bottom: 24px;
   transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
@@ -399,7 +399,7 @@ button {
   background: var(--card);
   color: var(--fg);
   padding: 7px 16px;
-  border-radius: 980px;
+  border-radius: 30px;
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
@@ -489,7 +489,7 @@ select,
 textarea {
   width: 100%;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: 30px;
   border: 1px solid transparent;
   background: color-mix(in srgb, var(--bg) 92%, var(--fg));
   color: var(--fg);
@@ -545,7 +545,7 @@ input[type="checkbox"] {
   min-width: 18px;
   flex-shrink: 0;
   border: 2px solid var(--border);
-  border-radius: 5px;
+  border-radius: 30px;
   background: var(--input);
   cursor: pointer;
   position: relative;
@@ -628,7 +628,7 @@ input[type="checkbox"].cb-pop {
   max-height: 420px;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
-  border-radius: 12px;
+  border-radius: 30px;
   margin: 12px 0;
 }
 table {
@@ -683,7 +683,7 @@ tbody tr.selected:hover {
 .search-wrap input {
   width: 100%;
   padding: 10px 36px 10px 14px;
-  border-radius: 10px;
+  border-radius: 30px;
   border: 1px solid transparent;
   background: color-mix(in srgb, var(--bg) 92%, var(--fg));
   color: var(--fg);
@@ -710,7 +710,7 @@ tbody tr.selected:hover {
   color: var(--muted);
   cursor: pointer;
   padding: 0;
-  border-radius: 50%;
+  border-radius: 30px;
   opacity: 0;
   transform: scale(0.5);
   pointer-events: none;
@@ -753,7 +753,7 @@ tbody tr.selected:hover {
   min-width: 0;
   max-width: min(360px, 100%);
   padding: 14px 20px;
-  border-radius: 14px;
+  border-radius: 30px;
   background: var(--card);
   color: var(--fg);
   border: 1px;
@@ -821,7 +821,7 @@ footer.note {
   margin-top: 32px;
   background: var(--row-hover);
   border: 1px;
-  border-radius: 12px;
+  border-radius: 30px;
   padding: 20px;
   font-size: 0.8125rem;
   color: var(--muted);
@@ -843,7 +843,7 @@ footer.note li {
 .badge {
   display: inline-block;
   padding: 3px 10px;
-  border-radius: 980px;
+  border-radius: 30px;
   font-size: 0.6875rem;
   font-weight: 500;
   line-height: 1.4;
@@ -886,7 +886,7 @@ input[type="text"].letter-input {
   margin: 0;
   text-align: center;
   text-transform: uppercase;
-  border-radius: 8px;
+  border-radius: 30px;
   font-size: 0.8125rem;
   font-weight: 600;
   animation: apple-letter-in 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
@@ -930,7 +930,7 @@ input[type="text"].letter-input.dup {
 /* ═══════════════════════════ 18. PAPER BITS ═══════════════════════════ */
 .paper-bit {
   position: fixed;
-  border-radius: 3px;
+  border-radius: 30px;
   pointer-events: none;
   z-index: 9999;
   opacity: 1;
@@ -961,7 +961,7 @@ input[type="text"].letter-input.dup {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--card);
-  border-radius: 3px;
+  border-radius: 30px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted);
@@ -984,7 +984,7 @@ input[type="text"].letter-input.dup {
   }
   .panel {
     padding: 16px;
-    border-radius: 14px;
+    border-radius: 30px;
   }
 }
 
@@ -1029,7 +1029,7 @@ input[type="text"].letter-input.dup {
   min-height: 62px;
   background: var(--card);
   border: 1px;
-  border-radius: 14px;
+  border-radius: 30px;
   box-shadow: var(--shadow-sm);
   animation: panel-fade-in 0.6s cubic-bezier(0.25, 0.1, 0.25, 1) 0.05s both;
 }
@@ -1125,7 +1125,7 @@ td {
 .warning {
   margin-top: 8px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: 30px;
   border: 1px solid rgba(255, 69, 58, 0.25);
   background: rgba(255, 69, 58, 0.08);
   color: var(--red);
@@ -1176,7 +1176,7 @@ textarea {
   background: var(--card);
   color: var(--fg);
   border: 1px;
-  border-radius: 14px;
+  border-radius: 30px;
   padding: 24px 28px;
   max-width: 380px;
   width: 90%;
@@ -1204,7 +1204,7 @@ textarea {
   background: var(--card);
   color: var(--fg);
   border: 1px;
-  border-radius: 14px;
+  border-radius: 30px;
   padding: 24px 28px;
   max-width: 380px;
   width: 90%;
@@ -1221,7 +1221,7 @@ textarea {
   width: 100%;
   max-width: 100%;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: 30px;
   border: 1px ;
   /* background: var(--input); */
   color: var(--fg);
@@ -1271,7 +1271,7 @@ textarea {
   align-items: stretch;
   gap: 4px;
   padding: 12px 8px;
-  border-radius: 22px;
+  border-radius: 30px;
   background: color-mix(in srgb, var(--card) 88%, transparent);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
@@ -1325,7 +1325,7 @@ textarea {
   align-items: center;
   gap: 12px;
   padding: 4px;
-  border-radius: 12px;
+  border-radius: 30px;
   color: var(--muted);
   text-decoration: none;
   white-space: nowrap;
@@ -1343,7 +1343,7 @@ textarea {
   width: 40px;
   height: 40px;
   flex-shrink: 0;
-  border-radius: 10px;
+  border-radius: 30px;
   display: grid;
   place-items: center;
   background: var(--bg);
@@ -1384,7 +1384,7 @@ textarea {
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
-  border-radius: 50%;
+  border-radius: 30px;
   background: var(--card);
   color: var(--fg);
   cursor: pointer;
@@ -1472,7 +1472,7 @@ body:has(#navbar) .container {
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
-  border-radius: 8px;
+  border-radius: 30px;
   background: var(--accent);
   color: var(--primary-fg);
   font-size: 0.625rem;
