@@ -227,13 +227,13 @@ code {
 .home-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
   background: var(--card);
   color: var(--fg);
-  padding: 8px 16px;
+  padding: 15px;
   border-radius: 980px;
   font-family: inherit;
-  font-size: 0.8125rem;
+  font-size: 0;
   font-weight: 400;
   cursor: pointer;
   white-space: nowrap;
@@ -264,11 +264,11 @@ code {
 .theme-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
   border: none;
   background: var(--card);
   color: var(--fg);
-  padding: 8px 16px;
+  padding: 15px;
   border-radius: 980px;
   font-size: 0.8125rem;
   font-weight: 500;
@@ -276,6 +276,9 @@ code {
   white-space: nowrap;
   box-shadow: var(--shadow-sm);
   transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+#theme-label {
+  display: none;
 }
 .theme-toggle:hover {
   background: var(--accent);

@@ -16,16 +16,32 @@
       .topbar-row {
         align-items: flex-start;
       }
-      .detail-title-wrap:hover .detail-actions {
-        opacity: 1;
-      }
-      .detail-actions {
+      /* View 2/3 subtitle button row */
+      .detail-actions-row {
         display: flex;
-        gap: 4px;
-        opacity: 0;
-        transition: opacity 0.2s;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
       }
-
+      .detail-actions-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+      }
+      .btn-icon-only {
+        padding: 6px 10px !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .btn-icon-only svg {
+        width: 16px;
+        height: 16px;
+      }
+      #btn-back-desc {
+        border-color: transparent;
+      }
       /* Forms */
       .form-inline {
         display: flex;
@@ -1237,18 +1253,48 @@
       <div class="topbar">
         <div class="topbar-row">
           <div class="title-block">
-            <h1>School Notes & To Do</h1>
-            <p class="subtitle" id="main-subtitle">Manajemen daftar sekolah, catatan dan pengerjaan.</p>
-            <p class="subtitle" id="storage-info" style="margin-top: 2px"></p>
+            <h1 id="topbar-title">School Notes & To Do</h1>
+
+            <!-- View 1 subtitle -->
+            <div id="sub-home">
+              <p class="subtitle" id="main-subtitle">Manajemen daftar sekolah, catatan dan pengerjaan.</p>
+              <p class="subtitle" id="storage-info" style="margin-top: 2px"></p>
+            </div>
+
+            <!-- View 2 subtitle: baris tombol -->
+            <div id="sub-detail" style="display: none">
+              <div class="detail-actions-row">
+                <button class="btn btn-icon-only" id="btn-back" title="Kembali"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6" /></svg></button>
+                <button class="btn" id="btn-toggle-done">Selesai: Sembunyikan</button>
+                <button class="btn btn-danger" id="btn-del-done">Hapus Selesai</button>
+                <span class="detail-actions-inline">
+                  <button class="btn-icon" id="btn-category-school" title="Ubah Kategori"><i class="fad fa-tag"></i></button>
+                  <button class="btn-icon" id="btn-set-pin" title="Set PIN / Ganti PIN"><i class="fad fa-lock"></i></button>
+                  <button class="btn-icon" id="btn-del-pin" title="Hapus PIN" style="display: none"><i class="fad fa-lock-open"></i></button>
+                  <button class="btn-icon" id="btn-rename-school" title="Ganti Nama Sekolah"><i class="fad fa-pencil"></i></button>
+                  <button class="btn-icon" id="btn-del-school" title="Hapus Sekolah Ini"><i class="fad fa-trash"></i></button>
+                </span>
+              </div>
+            </div>
+
+            <!-- View 3 subtitle: kembali + info tanggal -->
+            <div id="sub-desc" style="display: none">
+              <div class="detail-actions-row">
+                <button class="btn btn-icon-only" id="btn-back-desc" title="Kembali"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6" /></svg></button>
+                <span style="font-size: 0.75rem; color: var(--muted); white-space: nowrap">
+                  <span id="desc-done-date"></span>
+                  <span id="desc-dot" style="display: none">•</span>
+                  <span id="desc-created-date"></span>
+                  <span id="desc-created-dot" style="display: none">•</span>
+                  <span id="desc-hours" style="display: none"></span>
+                  <span id="desc-dot3" style="display: none">•</span>
+                  <span>Otomatis tersimpan</span>
+                </span>
+              </div>
+            </div>
           </div>
           <div class="topbar-actions">
-            <a href="../index.html" class="home-btn" title="Kembali ke Tools Hub"
-              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
-              </svg>
-              Home</a
-            >
+            <a href="../index.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg></a>
             <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
               <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="5" />
@@ -1285,34 +1331,6 @@
       <!-- VIEW 2: DETAIL SEKOLAH (NOTES) -->
       <div id="view-detail" class="view">
         <div class="panel">
-          <div class="panel-header">
-            <div class="detail-title-wrap" style="display: flex; align-items: center; gap: 8px">
-              <button class="btn" id="btn-back">← Kembali</button>
-              <h2 id="detail-title"></h2>
-              <span class="detail-actions">
-                <button class="btn-icon" id="btn-category-school" title="Ubah Kategori">
-                  <i class="fad fa-tag"></i>
-                </button>
-                <button class="btn-icon" id="btn-set-pin" title="Set PIN / Ganti PIN">
-                  <i class="fad fa-lock"></i>
-                </button>
-                <button class="btn-icon" id="btn-del-pin" title="Hapus PIN" style="display:none">
-                  <i class="fad fa-lock-open"></i>
-                </button>
-                <button class="btn-icon" id="btn-rename-school" title="Ganti Nama Sekolah">
-                  <i class="fad fa-pencil"></i>
-                </button>
-                <button class="btn-icon" id="btn-del-school" title="Hapus Sekolah Ini">
-                  <i class="fad fa-trash"></i>
-                </button>
-              </span>
-            </div>
-            <div style="display: flex; gap: 8px; align-items: center">
-              <button class="btn" id="btn-toggle-done" title="Tampilkan/Sembunyikan catatan selesai">Selesai: Sembunyikan</button>
-              <button class="btn btn-danger" id="btn-del-done" title="Hapus semua catatan yang sudah selesai">Hapus Selesai</button>
-            </div>
-          </div>
-
           <form id="form-note" class="form-inline">
             <div style="display: flex; gap: 8px; flex: 1">
               <input type="text" id="name" placeholder="Nama Catatan..." required autocomplete="off" style="flex: 7" />
@@ -1347,21 +1365,6 @@
       <!-- VIEW 3: DESKRIPSI CATATAN -->
       <div id="view-desc" class="view">
         <div class="panel">
-          <div class="panel-header">
-            <div style="display: flex; align-items: center; gap: 12px">
-              <button class="btn" id="btn-back-desc">← Kembali</button>
-              <h2 id="desc-title">Nama</h2>
-            </div>
-            <div style="display: flex; gap: 12px; align-items: center; font-size: 0.75rem; color: var(--muted); white-space: nowrap">
-              <span id="desc-done-date"></span>
-              <span id="desc-dot" style="display: none">•</span>
-              <span id="desc-created-date"></span>
-              <span id="desc-created-dot" style="display: none">•</span>
-              <span id="desc-hours" style="display: none"></span>
-              <span id="desc-dot3" style="display: none">•</span>
-              <span>Otomatis tersimpan</span>
-            </div>
-          </div>
           <div class="desc-name-row" style="margin-bottom: 12px">
             <div style="font-size: 0.875rem; font-weight: 600; color: var(--muted)">Nama</div>
             <label id="desc-done-label"
@@ -1556,17 +1559,27 @@
         const viewDesc = document.getElementById("view-desc");
         const schoolList = document.getElementById("school-list");
         const noteTbody = document.getElementById("note-tbody");
-        const detailTitle = document.getElementById("detail-title");
-        const descTitle = document.getElementById("desc-title");
         const descInput = document.getElementById("desc-input");
         const fileImport = document.getElementById("file-import");
 
         let currentNoteId = null;
         let hideDone = true;
 
+        const topbarTitle = document.getElementById("topbar-title");
+        const subHome = document.getElementById("sub-home");
+        const subDetail = document.getElementById("sub-detail");
+        const subDesc = document.getElementById("sub-desc");
+        function setSubtitle(which) {
+          subHome.style.display = which === "home" ? "" : "none";
+          subDetail.style.display = which === "detail" ? "" : "none";
+          subDesc.style.display = which === "desc" ? "" : "none";
+        }
+
         function showHome() {
           currentSchoolId = null;
           currentNoteId = null;
+          topbarTitle.textContent = "School Notes & To Do";
+          setSubtitle("home");
           viewDetail.classList.remove("active");
           viewDesc.classList.remove("active");
           viewHome.classList.add("active");
@@ -1576,8 +1589,9 @@
         function showDetail(id) {
           currentSchoolId = id;
           currentNoteId = null;
-          detailTitle.textContent = db[id].name;
+          topbarTitle.textContent = db[id].name;
           document.getElementById("btn-del-pin").style.display = db[id].pin ? "" : "none";
+          setSubtitle("detail");
           viewHome.classList.remove("active");
           viewDesc.classList.remove("active");
           viewDetail.classList.add("active");
@@ -1588,7 +1602,7 @@
           currentSchoolId = schoolId;
           currentNoteId = noteId;
           const note = db[schoolId].notes.find((n) => n.id === noteId);
-          descTitle.textContent = note.text;
+          topbarTitle.textContent = note.text;
           document.getElementById("desc-note-name").value = note.text;
           document.getElementById("desc-note-subname").value = note.subname || "";
           descInput.value = note.desc || "";
@@ -1625,6 +1639,7 @@
           viewHome.classList.remove("active");
           viewDetail.classList.remove("active");
           viewDesc.classList.add("active");
+          setSubtitle("desc");
           renderTasks();
         }
 
@@ -2545,7 +2560,7 @@
                 return;
               }
               note.text = newName;
-              descTitle.textContent = newName;
+              topbarTitle.textContent = newName;
               note.updatedAt = formatDate(new Date());
               saveData();
             }
@@ -2746,7 +2761,7 @@
           if (newName !== null && newName.trim() !== "") {
             db[currentSchoolId].name = newName.trim();
             saveData();
-            detailTitle.textContent = newName.trim();
+            topbarTitle.textContent = newName.trim();
             renderSchools();
             showToast("Nama sekolah diubah");
           }
