@@ -489,7 +489,7 @@ select,
 textarea {
   width: 100%;
   padding: 10px 14px;
-  border-radius: 30px;
+  border-radius: 25px;
   border: 1px solid transparent;
   background: color-mix(in srgb, var(--bg) 92%, var(--fg));
   color: var(--fg);
@@ -628,7 +628,7 @@ input[type="checkbox"].cb-pop {
   max-height: 420px;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
-  border-radius: 30px;
+  border-radius: 25px;
   margin: 12px 0;
 }
 table {
@@ -1288,11 +1288,15 @@ textarea {
 }
 .navbar::-webkit-scrollbar { width: 0; }
 
-/* ── Animasi "unhover" saat masuk halaman baru ──
+/* Setelah JS build (class loaded): tampilkan navbar. Base opacity:0 (lihat
+   .navbar) mencegah kedip saat konten halaman berat render sebelum navbar.js. */
+.navbar.loaded { opacity: 1; }
+
+/* ── Animasi "unhover" saat masuk halaman dari page LAIN ──
    Navbar start lebar (220px, tanpa transisi) & terlihat, lalu class dilepas →
    width (0.28s) + label (0.2s) transisi ke collapsed (64px) bersamaan = persis
-   seperti lepas hover. (Cross-document View Transition tidak cocok: morph antar 2
-   halaman, bukan "navbar menyusut di halaman baru".) */
+   seperti lepas hover. Hanya dipakai saat tiba dari page lain (bukan index.html
+   / buka langsung), biar tidak ada animasi aneh saat navbar sebelumnya tak ada. */
 .navbar.collapse-warm {
   width: 220px;
   opacity: 1;
@@ -1300,9 +1304,6 @@ textarea {
 }
 .navbar.collapse-warm .nav-item .label,
 .navbar.collapse-warm .nav-brand span { opacity: 1; }
-/* Setelah JS build (class loaded): tampilkan. Di desktop animasi warm sudah
-   jalan; di mobile cukup tampil tanpa shrink. */
-.navbar.loaded { opacity: 1; }
 
 /* ── Hover item aktif ≠ hover item lain ──
    Saat tiba di halaman baru, pointer sering masih di atas item yang baru jadi
@@ -1354,7 +1355,7 @@ textarea {
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   padding: 4px;
   border-radius: 30px;
   color: var(--muted);

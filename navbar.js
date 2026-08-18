@@ -11,6 +11,8 @@
   // Sembunyikan navbar di halaman Tools Hub (index.html)
   if (location.pathname.split("/").pop() === "index.html") {
     mount.remove();
+    // Tandai: keluar dari halaman TANPA navbar → page tujuan jangan animasi shrink.
+    localStorage.removeItem("nav-from-page");
     return;
   }
 
@@ -49,7 +51,7 @@
       .filter((t) => hidden.indexOf(t.label) === -1)
       .map((t) => {
         const active = current && t.href.split("/").pop() === current ? " active" : "";
-        return `<a class="nav-item${active}" href="${ROOT}${t.href}" title="${t.label}" style="--icon-bg:${t.c1}">
+        return `<a class="nav-item${active}" href="${ROOT}${t.href}" style="--icon-bg:${t.c1}">
           <span class="nav-ico"><svg viewBox="0 0 48 48">${t.icon}</svg></span>
           <span class="label">${t.label}</span>
         </a>`;
@@ -79,16 +81,22 @@
   // navbar tidak kembali ke state base opacity:0 (penyebab kedip di semua halaman).
   mount.classList.add("loaded");
 
-  // ── Animasi "unhover" saat masuk halaman BARU (bukan saat refresh) ──
-  // Mulai lebar (collapse-warm), lalu di frame berikutnya lepas → CSS transisi
-  // width 220px→64px + label fade = persis seperti lepas hover. Hover di item
-  // AKTIF (pointer biasanya masih di sana saat tiba) dicegah melebar via
-  // :has() di shared.css, tapi HANYA saat baru tiba (.arrived). Setelah pointer
-  // benar-benar keluar navbar pertama kali, class .arrived dilepas → hover normal
-  // lagi (masuk lagi ke item aktif = bisa melebar). Navigasi F5 → skip semua.
+  // ── Status "baru tiba" (bukan refresh) ──
+  // Class .arrived dipakai CSS :has() supaya hover di item AKTIF tetap slim saat
+  // baru tiba. Setelah pointer benar-benar keluar navbar pertama kali, class
+  // .arrived dilepas → hover normal lagi (masuk lagi ke item aktif = bisa melebar).
   const navType =
     (performance.getEntriesByType("navigation")[0] || {}).type || "navigate";
   const desktop = matchMedia("(min-width: 1049px)").matches;
+  // Tandai halaman INI punya navbar, supaya saat pindah ke page lain flag ini
+  // terbaca (referrer tidak bisa diandalkan). Index.html menghapus flag ini.
+  window.addEventListener("pagehide", () =>
+    localStorage.setItem("nav-from-page", "1")
+  );
+  // Animasi menyempit cuma kalau tiba dari page LAIN (flag ter-set). Dari
+  // index.html / buka langsung: flag kosong → langsung collapsed, tanpa animasi.
+  const fromPage = localStorage.getItem("nav-from-page") === "1";
+  localStorage.removeItem("nav-from-page");
   function slimDown() {
     mount.classList.add("collapse-warm");
     requestAnimationFrame(() =>
@@ -96,8 +104,8 @@
     );
   }
   if (desktop && navType === "navigate") {
-    slimDown();
     mount.classList.add("arrived"); // blok hover-item-aktif sampai mouseleave nyata
+    if (fromPage) slimDown(); // shrink anim cuma kalau sebelumnya dari page lain
   }
 
   // Burger (muncul < 1048px, toggle sidebar)
@@ -137,7 +145,7 @@
     // hover di item aktif melebar seperti item lain (aturan :has butuh .arrived).
     mount.classList.remove("arrived");
   });
-  // Tutup sidebar (mobile). Item lain navigasi sendiri; item aktif di halaman
+  // Tutup sidebar (mobile). Item lain navigasi sendiri; klik item aktif di halaman
   // yang SAMA tidak navigasi → slim-down lokal biar konsisten dengan pindah halaman.
   mount.querySelectorAll(".nav-item").forEach((a) =>
     a.addEventListener("click", () => {
