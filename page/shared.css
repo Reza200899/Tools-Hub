@@ -1307,10 +1307,14 @@ textarea {
 /* ── Hover item aktif ≠ hover item lain ──
    Saat tiba di halaman baru, pointer sering masih di atas item yang baru jadi
    active. Hover di item AKTIF → TETAP slim (seperti collapsed), jangan melebar.
-   Hover di item LAIN → :hover biasa melebar. Semua CSS :has(), tanpa JS lock. */
-.navbar:has(.nav-item.active:hover) { width: 64px; }
-.navbar:has(.nav-item.active:hover) .nav-item .label { opacity: 0; }
-.navbar:has(.nav-item.active:hover) .nav-brand span { display: none; }
+   Hover di item LAIN → :hover biasa melebar. Semua CSS :has(), tanpa JS lock.
+   Hanya desktop (≥1049px): di mobile sidebar pakai .open (width:220px) dan
+   :has ini akan berantem → flicker lebar/sempit. */
+@media (min-width: 1049px) {
+  .navbar.arrived:has(.nav-item.active:hover) { width: 64px; }
+  .navbar.arrived:has(.nav-item.active:hover) .nav-item .label { opacity: 0; }
+  .navbar.arrived:has(.nav-item.active:hover) .nav-brand span { display: none; }
+}
 
 .nav-brand {
   display: flex;

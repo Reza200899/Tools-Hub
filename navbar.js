@@ -83,7 +83,9 @@
   // Mulai lebar (collapse-warm), lalu di frame berikutnya lepas → CSS transisi
   // width 220px→64px + label fade = persis seperti lepas hover. Hover di item
   // AKTIF (pointer biasanya masih di sana saat tiba) dicegah melebar via
-  // :has() di shared.css, jadi tidak perlu lock JS. Navigasi F5 → skip.
+  // :has() di shared.css, tapi HANYA saat baru tiba (.arrived). Setelah pointer
+  // benar-benar keluar navbar pertama kali, class .arrived dilepas → hover normal
+  // lagi (masuk lagi ke item aktif = bisa melebar). Navigasi F5 → skip semua.
   const navType =
     (performance.getEntriesByType("navigation")[0] || {}).type || "navigate";
   const desktop = matchMedia("(min-width: 1049px)").matches;
@@ -93,7 +95,10 @@
       requestAnimationFrame(() => mount.classList.remove("collapse-warm"))
     );
   }
-  if (desktop && navType === "navigate") slimDown();
+  if (desktop && navType === "navigate") {
+    slimDown();
+    mount.classList.add("arrived"); // blok hover-item-aktif sampai mouseleave nyata
+  }
 
   // Burger (muncul < 1048px, toggle sidebar)
   const burger = document.createElement("button");
@@ -128,6 +133,9 @@
   mount.addEventListener("mouseleave", () => {
     overNav = false;
     scheduleClose();
+    // Pointer benar-benar keluar navbar → lepas status "baru tiba". Sesudah ini
+    // hover di item aktif melebar seperti item lain (aturan :has butuh .arrived).
+    mount.classList.remove("arrived");
   });
   // Tutup sidebar (mobile). Item lain navigasi sendiri; item aktif di halaman
   // yang SAMA tidak navigasi → slim-down lokal biar konsisten dengan pindah halaman.
