@@ -73,8 +73,11 @@
   // Isi item (sudah difilter hide) + sync saat berubah
   buildItems();
   window.addEventListener("tools-hidden-change", buildItems);
-  // Enable transisi setelah render pertama (cegah slide-from-left saat load)
-  setTimeout(() => mount.classList.add("loaded"), 50);
+
+  // Tampilkan navbar SEKETIKA setelah build (sinkron) — jangan via setTimeout.
+  // Class ini (opacity:1) harus sudah ada saat collapse-warm dilepas, supaya
+  // navbar tidak kembali ke state base opacity:0 (penyebab kedip di semua halaman).
+  mount.classList.add("loaded");
 
   // ── Animasi "unhover" saat masuk halaman baru ──
   // Mulai lebar (collapse-warm), lalu di frame berikutnya lepas → CSS transisi

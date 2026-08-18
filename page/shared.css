@@ -1260,10 +1260,14 @@ textarea {
 /* ═══════════════════════════ SHARED SIDEBAR ═══════════════════════════ */
 .navbar {
   position: fixed;
-  top: 16px;
+  top: 50%;
   left: 16px;
+  transform: translateY(-50%);
   z-index: 100;
   width: 64px;
+  /* Sembunyikan sampai JS build + set lebar (cegah "blink" navbar sempit di
+     halaman berat yang render konten sebelum navbar.js jalan). */
+  opacity: 0;
   max-height: calc(100vh - 32px);
   display: flex;
   flex-direction: column;
@@ -1285,15 +1289,20 @@ textarea {
 .navbar::-webkit-scrollbar { width: 0; }
 
 /* ── Animasi "unhover" saat masuk halaman baru ──
-   Navbar start lebar (220px, tanpa transisi), lalu class dilepas → width (0.28s)
-   + label (0.2s) transisi ke collapsed (64px) bersamaan = persis seperti lepas hover.
-   (Cross-document View Transition tidak cocok: dia morph antar 2 halaman.) */
+   Navbar start lebar (220px, tanpa transisi) & terlihat, lalu class dilepas →
+   width (0.28s) + label (0.2s) transisi ke collapsed (64px) bersamaan = persis
+   seperti lepas hover. (Cross-document View Transition tidak cocok: morph antar 2
+   halaman, bukan "navbar menyusut di halaman baru".) */
 .navbar.collapse-warm {
   width: 220px;
+  opacity: 1;
   transition: none;
 }
 .navbar.collapse-warm .nav-item .label,
 .navbar.collapse-warm .nav-brand span { opacity: 1; }
+/* Setelah JS build (class loaded): tampilkan. Di desktop animasi warm sudah
+   jalan; di mobile cukup tampil tanpa shrink. */
+.navbar.loaded { opacity: 1; }
 
 .nav-brand {
   display: flex;
@@ -1407,14 +1416,14 @@ textarea {
 @media (max-width: 1048px) {
   .nav-burger { display: inline-flex; }
   .navbar {
-    left: calc(-100% - 16px);
+    transform: translate(calc(-100% - 16px), -50%);
     transition: none;
   }
   .navbar.loaded {
-    transition: left 0.28s cubic-bezier(0.25, 0.1, 0.25, 1), width 0.28s cubic-bezier(0.25, 0.1, 0.25, 1);
+    transition: transform 0.28s cubic-bezier(0.25, 0.1, 0.25, 1), width 0.28s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
   .navbar.loaded.open {
-    left: 16px;
+    transform: translate(0, -50%);
     width: 220px;
   }
   .navbar.open .nav-brand span,
