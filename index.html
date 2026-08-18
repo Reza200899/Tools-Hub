@@ -270,9 +270,25 @@
         line-height: 1.45;
       }
 
-      /* ── Topbar theme toggle alignment ── */
+      /* ── Topbar theme toggle glass pill ── */
       .topbar .theme-toggle {
         flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 0;
+        background: var(--card);
+        color: var(--fg);
+        padding: 12px;
+        border-radius: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: var(--liquid-shadow);
+        outline: none;
+        transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+      }
+      .topbar .theme-toggle:hover {
+        color: var(--muted);
+        background: color-mix(in srgb, var(--muted) 16%, transparent);
+        transform: scale(1.02);
       }
 
       /* ── Empty State ── */
