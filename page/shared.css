@@ -1260,9 +1260,8 @@ textarea {
 /* ═══════════════════════════ SHARED SIDEBAR ═══════════════════════════ */
 .navbar {
   position: fixed;
-  top: 50%;
+  top: 16px;
   left: 16px;
-  transform: translateY(-50%);
   z-index: 100;
   width: 64px;
   max-height: calc(100vh - 32px);
@@ -1284,6 +1283,17 @@ textarea {
   width: 220px;
 }
 .navbar::-webkit-scrollbar { width: 0; }
+
+/* ── Animasi "unhover" saat masuk halaman baru ──
+   Navbar start lebar (220px, tanpa transisi), lalu class dilepas → width (0.28s)
+   + label (0.2s) transisi ke collapsed (64px) bersamaan = persis seperti lepas hover.
+   (Cross-document View Transition tidak cocok: dia morph antar 2 halaman.) */
+.navbar.collapse-warm {
+  width: 220px;
+  transition: none;
+}
+.navbar.collapse-warm .nav-item .label,
+.navbar.collapse-warm .nav-brand span { opacity: 1; }
 
 .nav-brand {
   display: flex;
@@ -1397,14 +1407,14 @@ textarea {
 @media (max-width: 1048px) {
   .nav-burger { display: inline-flex; }
   .navbar {
-    transform: translate(calc(-100% - 16px), -50%);
+    left: calc(-100% - 16px);
     transition: none;
   }
   .navbar.loaded {
-    transition: transform 0.28s cubic-bezier(0.25, 0.1, 0.25, 1), width 0.28s cubic-bezier(0.25, 0.1, 0.25, 1);
+    transition: left 0.28s cubic-bezier(0.25, 0.1, 0.25, 1), width 0.28s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
   .navbar.loaded.open {
-    transform: translate(0, -50%);
+    left: 16px;
     width: 220px;
   }
   .navbar.open .nav-brand span,

@@ -76,6 +76,20 @@
   // Enable transisi setelah render pertama (cegah slide-from-left saat load)
   setTimeout(() => mount.classList.add("loaded"), 50);
 
+  // ── Animasi "unhover" saat masuk halaman baru ──
+  // Mulai lebar (collapse-warm), lalu di frame berikutnya lepas → CSS transisi
+  // width 220px→64px + label fade, persis seperti lepas hover. Tanpa ini navbar
+  // langsung collapsed (instan). Class dihapus stelah animasi selesai.
+  if (matchMedia("(min-width: 1049px)").matches) {
+    mount.classList.add("collapse-warm");
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => mount.classList.remove("collapse-warm"))
+    );
+    mount.addEventListener("transitionend", function done(e) {
+      if (e.propertyName === "width") mount.removeEventListener("transitionend", done);
+    });
+  }
+
   // Burger (muncul < 1048px, toggle sidebar)
   const burger = document.createElement("button");
   burger.className = "nav-burger";
@@ -110,6 +124,7 @@
     overNav = false;
     scheduleClose();
   });
+  // Tutup sidebar (mobile) saat klik item — tidak perlu hook VT lagi
   mount.querySelectorAll(".nav-item").forEach((a) =>
     a.addEventListener("click", () => mount.classList.remove("open"))
   );
