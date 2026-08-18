@@ -79,11 +79,13 @@
   // navbar tidak kembali ke state base opacity:0 (penyebab kedip di semua halaman).
   mount.classList.add("loaded");
 
-  // ── Animasi "unhover" saat masuk halaman baru ──
+  // ── Animasi "unhover" saat masuk halaman BARU (bukan saat refresh) ──
   // Mulai lebar (collapse-warm), lalu di frame berikutnya lepas → CSS transisi
-  // width 220px→64px + label fade, persis seperti lepas hover. Tanpa ini navbar
-  // langsung collapsed (instan). Class dihapus stelah animasi selesai.
-  if (matchMedia("(min-width: 1049px)").matches) {
+  // width 220px→64px + label fade, persis seperti lepas hover. Saat refresh (F5)
+  // type = "reload" → skip animasi, navbar langsung collapsed tanpa shrink.
+  const navType =
+    (performance.getEntriesByType("navigation")[0] || {}).type || "navigate";
+  if (matchMedia("(min-width: 1049px)").matches && navType !== "reload") {
     mount.classList.add("collapse-warm");
     requestAnimationFrame(() =>
       requestAnimationFrame(() => mount.classList.remove("collapse-warm"))
