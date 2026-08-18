@@ -81,18 +81,22 @@
 
   // ── Animasi "unhover" saat masuk halaman BARU (bukan saat refresh) ──
   // Mulai lebar (collapse-warm), lalu di frame berikutnya lepas → CSS transisi
-  // width 220px→64px + label fade, persis seperti lepas hover. Saat refresh (F5)
-  // type = "reload" → skip animasi, navbar langsung collapsed tanpa shrink.
+  // width 220px→64px + label fade = persis seperti lepas hover. Setelah tiba,
+  // class "locked" blokir :hover sampai pointer benar-benar keluar-masuk navbar
+  // (jadi saat tiba dengan pointer di atas navbar, dia TIDAK otomatis buka).
+  // Navigasi F5 (reload) → skip animasi, langsung collapsed.
   const navType =
     (performance.getEntriesByType("navigation")[0] || {}).type || "navigate";
-  if (matchMedia("(min-width: 1049px)").matches && navType !== "reload") {
+  const desktop = matchMedia("(min-width: 1049px)").matches;
+  function slimDown() {
     mount.classList.add("collapse-warm");
     requestAnimationFrame(() =>
       requestAnimationFrame(() => mount.classList.remove("collapse-warm"))
     );
-    mount.addEventListener("transitionend", function done(e) {
-      if (e.propertyName === "width") mount.removeEventListener("transitionend", done);
-    });
+  }
+  if (desktop && navType === "navigate") {
+    slimDown();
+    mount.classList.add("locked"); // blokir hover sampai mouseleave nyata
   }
 
   // Burger (muncul < 1048px, toggle sidebar)
@@ -125,12 +129,33 @@
     clearTimeout(closeTimer);
     overNav = true;
   });
+  // armed=true HANYA setelah pointer benar-benar masuk navbar. Tanpa ini, event
+  // mouseleave palsu saat navigasi (pointer diam tapi konten ganti) akan melepas
+  // "locked" seketika → navbar langsung buka saat tiba.
+  let armed = false;
+  mount.addEventListener("mouseenter", () => {
+    clearTimeout(closeTimer);
+    overNav = true;
+    armed = true;
+  });
   mount.addEventListener("mouseleave", () => {
     overNav = false;
     scheduleClose();
+    if (!armed) return; // abaikan leave palsu saat load
+    armed = false;
+    // Lepas kunci hover setelah pointer benar-benar keluar navbar.
+    // Sesudah ini hover normal lagi (masuk → expand).
+    mount.classList.remove("locked");
   });
-  // Tutup sidebar (mobile) saat klik item — tidak perlu hook VT lagi
+  // Tutup sidebar (mobile). Klik item aktif di halaman yang SAMA = tidak navigasi,
+  // jadi slim-down + kunci secara lokal biar konsisten dengan pindah halaman.
   mount.querySelectorAll(".nav-item").forEach((a) =>
-    a.addEventListener("click", () => mount.classList.remove("open"))
+    a.addEventListener("click", () => {
+      mount.classList.remove("open");
+      if (a.classList.contains("active") && desktop) {
+        slimDown();
+        mount.classList.add("locked");
+      }
+    })
   );
 })();

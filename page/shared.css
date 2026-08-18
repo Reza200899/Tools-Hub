@@ -1304,6 +1304,14 @@ textarea {
    jalan; di mobile cukup tampil tanpa shrink. */
 .navbar.loaded { opacity: 1; }
 
+/* ── State saat pindah halaman (diatur navbar.js) ──
+   "locked": setelah tiba di halaman baru, navbar slim + blokir :hover sampai
+   pointer benar-benar keluar navbar (lihat navbar.js). Jadi saat tiba dengan
+   pointer di atas navbar, dia TIDAK otomatis buka. */
+.navbar.locked:hover { width: 64px; }
+.navbar.locked:hover .nav-item .label,
+.navbar.locked:hover .nav-brand span { opacity: 0; }
+
 .nav-brand {
   display: flex;
   align-items: center;
