@@ -1180,7 +1180,6 @@ td {
 }
 textarea {
   min-height: 72px;
-  background: color-mix(in srgb, var(--bg) 92%, var(--fg));
 }
 .warning-inline {
   color: var(--red);
@@ -1414,7 +1413,7 @@ textarea {
   padding: 6px 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 30px;
-  background: color-mix(in srgb, var(--bg) 92%, var(--fg));
+  background: color-mix(in srgb, var(--bg) 92%, var(--fg)) !important;
   color: var(--fg);
   font-size: 0.8125rem;
   box-shadow: var(--liquid-shadow);
