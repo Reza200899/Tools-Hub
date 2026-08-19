@@ -41,6 +41,19 @@
         gap: 8px;
         justify-content: flex-end;
       }
+      .topbar-action.show {
+        animation: topbar-action-in 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+      }
+      @keyframes topbar-action-in {
+        from {
+          opacity: 0;
+          transform: translateX(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
       /* View 2/3 subtitle button row */
       .detail-actions-row {
         display: flex;
@@ -1610,11 +1623,15 @@
         const subDetail = document.getElementById("sub-detail");
         const subDesc = document.getElementById("sub-desc");
         const topbarActionDetail = document.getElementById("topbar-action-detail");
+        const topbarActionExport = document.getElementById("topbar-action-export");
         function setSubtitle(which) {
           subHome.style.display = which === "home" ? "" : "none";
           subDetail.style.display = which === "detail" ? "" : "none";
           subDesc.style.display = which === "desc" ? "" : "none";
           topbarActionDetail.style.display = which === "detail" ? "" : "none";
+          topbarActionDetail.classList.toggle("show", which === "detail");
+          topbarActionExport.style.display = which === "home" ? "" : "none";
+          topbarActionExport.classList.toggle("show", which === "home");
         }
 
         function showHome() {
