@@ -96,6 +96,41 @@
   // navbar tidak kembali ke state base opacity:0 (penyebab kedip di semua halaman).
   mount.classList.add("loaded");
 
+  // ── Theme toggle (single source — sidebar only) ──
+  (function () {
+    const root = document.documentElement;
+    const toggle = mount.querySelector("#theme-toggle");
+    if (!toggle) return;
+    const label = toggle.querySelector("#theme-label");
+    const sun = toggle.querySelector(".icon-sun");
+    const moon = toggle.querySelector(".icon-moon");
+    function applyTheme(t) {
+      root.setAttribute("data-theme", t);
+      try { localStorage.setItem("theme", t); } catch (e) {}
+      if (t === "light") {
+        if (sun) sun.style.display = "none";
+        if (moon) moon.style.display = "inline";
+        if (label) label.textContent = "Mode Gelap";
+      } else {
+        if (sun) sun.style.display = "inline";
+        if (moon) moon.style.display = "none";
+        if (label) label.textContent = "Mode Terang";
+      }
+    }
+    let saved;
+    try { saved = localStorage.getItem("theme"); } catch (e) {}
+    applyTheme(saved || "dark");
+    toggle.addEventListener("click", () => {
+      toggle.classList.remove("is-switching");
+      void toggle.offsetWidth;
+      toggle.classList.add("is-switching");
+      const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      toggle.blur();
+      if (window.triggerThemeSplash) window.triggerThemeSplash(toggle, next, applyTheme);
+      else applyTheme(next);
+    });
+  })();
+
   // ── Collapse / uncollapse ──
   const collapseBtn = mount.querySelector("#nav-collapse-btn");
   const searchInput = mount.querySelector("#nav-search");

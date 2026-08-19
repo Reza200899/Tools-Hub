@@ -94,7 +94,7 @@
       }
       .school-card {
         padding: 16px;
-        border-radius: 30px;
+        border-radius: 16px;
         border: none;
         background: color-mix(in srgb, var(--input) 80%, var(--bg));
         cursor: pointer;
@@ -1355,8 +1355,8 @@
       <div id="view-home" class="view active">
         <div class="panel">
           <form id="form-school" class="form-inline">
-            <input type="text" id="input-school" class="liquid-glass" placeholder="Nama Sekolah/Kegiatan Baru..." required autocomplete="off" style="flex: 7" />
-            <input type="text" id="input-category" class="liquid-glass" placeholder="Kategori (opsional)" autocomplete="off" list="category-list" style="flex: 3" />
+            <input type="text" id="input-school" placeholder="Nama Sekolah/Kegiatan Baru..." required autocomplete="off" style="flex: 7" />
+            <input type="text" id="input-category" placeholder="Kategori (opsional)" autocomplete="off" list="category-list" style="flex: 3" />
             <datalist id="category-list"></datalist>
             <button type="submit" class="btn btn-primary">Tambah</button>
           </form>
@@ -1484,44 +1484,6 @@
           }, { once: true });
           if (typeof callback === "function") setTimeout(() => callback(resolveVal), 180);
         };
-
-        // === Theme ===
-        const root = document.documentElement;
-        const toggle = document.getElementById("theme-toggle");
-        const label = document.getElementById("theme-label");
-        const sun = toggle.querySelector(".icon-sun");
-        const moon = toggle.querySelector(".icon-moon");
-        function applyTheme(theme) {
-          root.setAttribute("data-theme", theme);
-          if (theme === "light") {
-            sun.style.display = "none";
-            moon.style.display = "inline";
-            label.textContent = "Mode Gelap";
-          } else {
-            sun.style.display = "inline";
-            moon.style.display = "none";
-            label.textContent = "Mode Terang";
-          }
-          try {
-            localStorage.setItem("theme", theme);
-          } catch (e) {}
-        }
-        let saved;
-        try {
-          saved = localStorage.getItem("theme");
-        } catch (e) {}
-        const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-        applyTheme(saved || (prefersDark ? "dark" : "dark"));
-        toggle.addEventListener("click", () => {
-          toggle.classList.remove("is-switching");
-          void toggle.offsetWidth;
-          toggle.classList.add("is-switching");
-          const current = root.getAttribute("data-theme") || "light";
-          const next = current === "dark" ? "light" : "dark";
-          toggle.blur();
-          if (window.triggerThemeSplash) window.triggerThemeSplash(toggle, next, applyTheme);
-          else applyTheme(next);
-        });
 
         // === Data Model ===
         // Format: { "id_sekolah": { name: "SMA 1", notes: [ { id, text, date, done } ] } }
