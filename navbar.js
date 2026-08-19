@@ -119,26 +119,6 @@
   });
 
 
-  // ── Status "baru tiba" (bukan refresh) ──
-  // Class .arrived dipakai CSS :has() supaya hover di item AKTIF tetap slim saat
-  // baru tiba. Setelah pointer benar-benar keluar navbar pertama kali, class
-  // .arrived dilepas → hover normal lagi (masuk lagi ke item aktif = bisa melebar).
-  const navType =
-    (performance.getEntriesByType("navigation")[0] || {}).type || "navigate";
-  const desktop = matchMedia("(min-width: 1049px)").matches;
-  // Tandai halaman INI punya navbar, supaya saat pindah ke page lain flag ini
-  // terbaca (referrer tidak bisa diandalkan). Index.html menghapus flag ini.
-  window.addEventListener("pagehide", () =>
-    localStorage.setItem("nav-from-page", "1")
-  );
-  // Animasi menyempit cuma kalau tiba dari page LAIN (flag ter-set). Dari
-  // index.html / buka langsung: flag kosong → langsung collapsed, tanpa animasi.
-  const fromPage = localStorage.getItem("nav-from-page") === "1";
-  localStorage.removeItem("nav-from-page");
-  if (desktop && navType === "navigate") {
-    mount.classList.add("arrived"); // blok hover-item-aktif sampai mouseleave nyata
-  }
-
   // Burger (muncul < 1048px, toggle sidebar) — auto-close saat pointer keluar
   const burger = document.createElement("button");
   burger.className = "nav-burger";

@@ -139,7 +139,8 @@ h1 {
   letter-spacing: -0.03em;
   line-height: 1.08;
 }
-.topbar h1 {
+.topbar h1,
+.topbar h2 {
   min-width: 0;
   overflow-wrap: anywhere;
   background: linear-gradient(135deg, #f5f5f7 0%, #86868b 30%, #2997ff 60%, #bf5af2 100%);
@@ -158,7 +159,8 @@ h1 {
     background-position: 100% 50%;
   }
 }
-[data-theme="light"] .topbar h1 {
+[data-theme="light"] .topbar h1,
+[data-theme="light"] .topbar h2 {
   background: linear-gradient(135deg, #1d1d1f 0%, #86868b 30%, #0071e3 60%, #7030a0 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -198,6 +200,7 @@ code {
 .container {
   margin: 0 auto;
   padding: 48px 16px 48px 24px;
+  transition: all 0.3s;
 }
 .topbar {
   display: flex;
@@ -432,11 +435,11 @@ button {
 }
 /* Clone glassmorphism dari .btn-liquid — bg transparan + blur + highlight border */
 .liquid-glass {
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: color-mix(in srgb, var(--card) 55%, transparent);
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  background: var(--card) !important;
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
-  padding: 10px;
+  padding: 10px !important;
   box-shadow: var(--liquid-shadow);
 }
 button:hover:not(:disabled) {
@@ -1331,18 +1334,6 @@ textarea {
    .navbar) mencegah kedip saat konten halaman berat render sebelum navbar.js. */
 .navbar.loaded { opacity: 1; }
 
-/* ── Hover item aktif ≠ hover item lain ──
-   Saat tiba di halaman baru, pointer sering masih di atas item yang baru jadi
-   active. Hover di item AKTIF → TETAP slim (seperti collapsed), jangan melebar.
-   Hover di item LAIN → :hover biasa melebar. Semua CSS :has(), tanpa JS lock.
-   Hanya desktop (≥1049px): di mobile sidebar pakai .open (width:220px) dan
-   :has ini akan berantem → flicker lebar/sempit. */
-@media (min-width: 1049px) {
-  .navbar.arrived:has(.nav-item.active:hover) { width: 64px; }
-  .navbar.arrived:has(.nav-item.active:hover) .nav-item .label { opacity: 0; }
-  .navbar.arrived:has(.nav-item.active:hover) .nav-brand span { display: none; }
-}
-
 .nav-brand {
   display: flex;
   align-items: center;
@@ -1470,6 +1461,10 @@ textarea {
 .navbar.collapsed .nav-footer-left {
   display: none;
 }
+/* Collapsed: .nav-footer-left hilang → center-kan tombol collapse di .nav-top */
+.navbar.collapsed .nav-top {
+  justify-content: center;
+}
 .navbar.collapsed .nav-item {
   position: relative;
 }
@@ -1575,6 +1570,26 @@ textarea {
     padding-top: 50px;
   }
   .nav-collapse-btn { display: none; }
+  /* Collapsed (persist di localStorage dari desktop) tidak berlaku di mobile:
+     jangan ciutkan & jangan jadikan tooltip → nama tampil inline di drawer. */
+  .navbar.collapsed { width: 220px; }
+  .navbar.collapsed .nav-top { justify-content: flex-start; }
+  .navbar.collapsed .nav-footer-left { display: flex; }
+  .navbar.collapsed .nav-item .label,
+  .navbar.collapsed .nav-item:hover .label {
+    position: static;
+    left: auto;
+    top: auto;
+    transform: none;
+    padding: 0;
+    border: none;
+    background: none;
+    box-shadow: none;
+    border-radius: 0;
+    white-space: normal;
+    opacity: 1;
+    visibility: visible;
+  }
   .navbar.loaded {
     transition: transform 0.28s cubic-bezier(0.25, 0.1, 0.25, 1), width 0.28s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
