@@ -63,12 +63,27 @@
 
   mount.className = "navbar";
   mount.innerHTML = `
-    <a class="nav-brand" href="${ROOT}index.html" title="Beranda" style="display:none">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-      </svg>
-      <span>Beranda</span>
-    </a>
+    <div class="nav-top">
+      <div class="nav-footer-left">
+        <a class="nav-home" href="${ROOT}index.html" title="Beranda">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </a>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5" />
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+          <span id="theme-label">Mode Terang</span>
+        </button>
+      </div>
+      <button class="nav-collapse-btn" id="nav-collapse-btn" title="Ciutkan/Perlebar" aria-label="Ciutkan atau perlebar navbar">
+        <i class="fa-regular fa-bars"></i>
+      </button>
+    </div>
+    <input class="nav-search" id="nav-search" type="text" placeholder="Cari program..." autocomplete="off" />
     <nav class="nav-items"></nav>
   `;
 
@@ -80,6 +95,29 @@
   // Class ini (opacity:1) harus sudah ada saat collapse-warm dilepas, supaya
   // navbar tidak kembali ke state base opacity:0 (penyebab kedip di semua halaman).
   mount.classList.add("loaded");
+
+  // ── Collapse / uncollapse ──
+  const collapseBtn = mount.querySelector("#nav-collapse-btn");
+  const searchInput = mount.querySelector("#nav-search");
+  const footer = mount.querySelector(".nav-footer");
+  let collapsed = false;
+  try { collapsed = localStorage.getItem("nav-collapsed") === "1"; } catch (e) {}
+  if (collapsed) mount.classList.add("collapsed");
+  collapseBtn.addEventListener("click", () => {
+    collapsed = !collapsed;
+    mount.classList.toggle("collapsed", collapsed);
+    try { localStorage.setItem("nav-collapsed", collapsed ? "1" : "0"); } catch (e) {}
+  });
+
+  // ── Search filter item ──
+  searchInput.addEventListener("input", () => {
+    const q = searchInput.value.trim().toLowerCase();
+    mount.querySelectorAll(".nav-item").forEach((a) => {
+      const label = (a.querySelector(".label") || {}).textContent || "";
+      a.style.display = label.toLowerCase().includes(q) ? "" : "none";
+    });
+  });
+
 
   // ── Status "baru tiba" (bukan refresh) ──
   // Class .arrived dipakai CSS :has() supaya hover di item AKTIF tetap slim saat
@@ -97,18 +135,11 @@
   // index.html / buka langsung: flag kosong → langsung collapsed, tanpa animasi.
   const fromPage = localStorage.getItem("nav-from-page") === "1";
   localStorage.removeItem("nav-from-page");
-  function slimDown() {
-    mount.classList.add("collapse-warm");
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => mount.classList.remove("collapse-warm"))
-    );
-  }
   if (desktop && navType === "navigate") {
     mount.classList.add("arrived"); // blok hover-item-aktif sampai mouseleave nyata
-    if (fromPage) slimDown(); // shrink anim cuma kalau sebelumnya dari page lain
   }
 
-  // Burger (muncul < 1048px, toggle sidebar)
+  // Burger (muncul < 1048px, toggle sidebar) — auto-close saat pointer keluar
   const burger = document.createElement("button");
   burger.className = "nav-burger";
   burger.setAttribute("aria-label", "Buka menu");
@@ -140,16 +171,12 @@
   mount.addEventListener("mouseleave", () => {
     overNav = false;
     scheduleClose();
-    // Pointer benar-benar keluar navbar → lepas status "baru tiba". Sesudah ini
-    // hover di item aktif melebar seperti item lain (aturan :has butuh .arrived).
-    mount.classList.remove("arrived");
   });
   // Tutup sidebar (mobile). Item lain navigasi sendiri; klik item aktif di halaman
-  // yang SAMA tidak navigasi → slim-down lokal biar konsisten dengan pindah halaman.
+  // yang SAMA tidak navigasi → langsung tutup biar konsisten dengan pindah halaman.
   mount.querySelectorAll(".nav-item").forEach((a) =>
     a.addEventListener("click", () => {
       mount.classList.remove("open");
-      if (a.classList.contains("active") && desktop) slimDown();
     })
   );
 })();
