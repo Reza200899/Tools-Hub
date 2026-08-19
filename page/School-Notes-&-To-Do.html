@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="../fontawesome/css/fontawesome.css" />
     <link rel="stylesheet" href="../fontawesome/css/duotone.css" />
     <link rel="stylesheet" href="../fontawesome/css/regular.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/rizmyabdulla/fontawesome-pro@main/releases/v7.3.0/css/thin.css"
+    />
     <title>School Notes & To Do</title>
     <meta name="description" content="Manajemen catatan tiap sekolah." />
     <style>
@@ -1319,6 +1323,11 @@
             </div>
           </div>
           <div class="topbar-action-group">
+            <div class="topbar-action" id="topbar-action-export">
+              <button class="btn btn-icon" id="btn-export" title="Backup (JSON)"><i class="fa-regular fa-file-export"></i></button>
+              <button class="btn btn-icon" id="btn-import-trigger" title="Import Data"><i class="fa-regular fa-file-import"></i></button>
+              <input type="file" id="file-import" accept=".json" style="display: none" />
+            </div>
             <div class="topbar-action" id="topbar-action-detail" style="display: none">
               <span class="detail-actions-inline">
                 <button class="btn-icon" id="btn-category-school" title="Ubah Kategori"><i class="fa-regular fa-tag"></i></button>
@@ -1348,11 +1357,6 @@
         <div class="panel">
           <div class="panel-header">
             <h2>Daftar Sekolah & Kegiatan</h2>
-            <div style="display: flex; gap: 8px">
-              <button class="btn" id="btn-export">Backup (JSON)</button>
-              <button class="btn" id="btn-import-trigger">Import Data</button>
-              <input type="file" id="file-import" accept=".json" style="display: none" />
-            </div>
           </div>
           <form id="form-school" class="form-inline">
             <input type="text" id="input-school" placeholder="Nama Sekolah/Kegiatan Baru..." required autocomplete="off" style="flex: 7" />
