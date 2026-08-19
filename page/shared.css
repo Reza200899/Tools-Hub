@@ -196,7 +196,6 @@ code {
 
 /* ═══════════════════════════ 4. LAYOUT ═══════════════════════════ */
 .container {
-  max-width: 1400px;
   margin: 0 auto;
   padding: 48px 16px 48px 24px;
 }
@@ -1295,20 +1294,20 @@ textarea {
 .navbar {
   position: fixed;
   top: 50%;
-  left: 16px;
+  left: 10px;
   transform: translateY(-50%);
   z-index: 100;
-  width: 64px;
+  width: 220px;
   /* Sembunyikan sampai JS build + set lebar (cegah "blink" navbar sempit di
      halaman berat yang render konten sebelum navbar.js jalan). */
   opacity: 0;
-  max-height: calc(100vh - 32px);
+  height: calc(100vh - 28px);
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 4px;
   padding: 12px 8px;
-  border-radius: 30px;
+  border-radius: 20px;
   background: color-mix(in srgb, var(--card) 88%, transparent);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
@@ -1317,9 +1316,6 @@ textarea {
   overflow-y: auto;
   overflow-x: hidden;
   transition: width 0.28s cubic-bezier(0.25, 0.1, 0.25, 1);
-}
-.navbar:hover {
-  width: 220px;
 }
 .navbar::-webkit-scrollbar { width: 0; }
 
@@ -1430,13 +1426,10 @@ textarea {
   background: color-mix(in srgb, var(--icon-bg) 18%, transparent);
 }
 .nav-item .label {
-  opacity: 0;
+  opacity: 1;
   font-size: 0.8125rem;
   font-weight: 500;
   transition: opacity 0.2s ease 0.05s;
-}
-.navbar:hover .nav-item .label {
-  opacity: 1;
 }
 
 /* ── Burger (muncul < 1048px) ── */
@@ -1457,9 +1450,9 @@ textarea {
   cursor: pointer;
   box-shadow: var(--liquid-shadow);
 }
-.nav-burger svg {
-  width: 20px;
-  height: 20px;
+.nav-burger i {
+  font-size: 16px;
+  line-height: 1;
 }
 @media (max-width: 1048px) {
   .nav-burger { display: inline-flex; }
@@ -1488,7 +1481,8 @@ body:has(#navbar) .container {
 }
 @media (min-width: 1049px) {
   body:has(#navbar) .container {
-    padding-left: 96px;
+    padding-left: 246px;
+    padding-top: 24px;
     margin: 0 auto;
   }
 }

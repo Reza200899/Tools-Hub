@@ -112,8 +112,7 @@
   const burger = document.createElement("button");
   burger.className = "nav-burger";
   burger.setAttribute("aria-label", "Buka menu");
-  burger.innerHTML =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+  burger.innerHTML = '<i class="fa-regular fa-bars"></i>';
   document.body.appendChild(burger);
   burger.addEventListener("click", () => mount.classList.toggle("open"));
   let overBurger = false,
