@@ -14,7 +14,28 @@
         margin-bottom: 20px;
       }
       .topbar-row {
+        display: flex;
         align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .topbar-action {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 4px;
+        border-radius: 38px;
+        justify-content: flex-end;
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: var(--liquid-shadow);
+      }
+      .topbar-action-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: flex-end;
       }
       /* View 2/3 subtitle button row */
       .detail-actions-row {
@@ -27,10 +48,9 @@
       .detail-actions-inline {
         display: inline-flex;
         align-items: center;
-        gap: 2px;
+        gap: 8px;
       }
       .btn-icon-only {
-        padding: 6px 10px !important;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -161,6 +181,18 @@
       [data-theme="light"] .btn-export-note:hover,
       [data-theme="light"] .btn-rename-note:hover {
         color: #000 !important;
+      }
+      [data-theme="light"] .btn-icon {
+        color: #000;
+      }
+      [data-theme="light"] .btn-icon:hover:not(:disabled) {
+        color: #fff;
+        background: var(--muted);
+      }
+      [data-theme="light"] #btn-rename-school:hover,
+      [data-theme="light"] #btn-set-pin:hover {
+        color: #fff;
+        background: var(--muted);
       }
 
       /* Col widths */
@@ -470,16 +502,15 @@
       .btn-icon {
         background: transparent;
         border: none;
-        color: var(--muted);
+        color: #fff;
         cursor: pointer;
-        width: 26px;
-        height: 26px;
-        padding: 0;
+        padding: 10px;
         border-radius: 30px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         vertical-align: middle;
+        box-shadow: none;
         transition:
           color 0.2s,
           background 0.2s;
@@ -491,18 +522,18 @@
         font-style: normal;
       }
       .btn-icon:hover:not(:disabled) {
-        color: var(--fg);
-        background: var(--accent);
+        color: #fff;
+        background: var(--muted);
       }
       #btn-rename-school:hover {
-        color: var(--fg);
-        background: var(--accent);
+        color: #fff;
+        background: var(--muted);
         transform: scale(1.15);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
       #btn-set-pin:hover {
-        color: var(--fg);
-        background: var(--accent);
+        color: #fff;
+        background: var(--muted);
         transform: scale(1.15);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
@@ -1265,16 +1296,9 @@
             <!-- View 2 subtitle: baris tombol -->
             <div id="sub-detail" style="display: none">
               <div class="detail-actions-row">
-                <button class="btn btn-icon-only" id="btn-back" title="Kembali"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6" /></svg></button>
+                <button class="btn btn-icon-only" id="btn-back" title="Kembali"><i class="fa-regular fa-chevron-left"></i></button>
                 <button class="btn" id="btn-toggle-done">Selesai: Sembunyikan</button>
                 <button class="btn btn-danger" id="btn-del-done">Hapus Selesai</button>
-                <span class="detail-actions-inline">
-                  <button class="btn-icon" id="btn-category-school" title="Ubah Kategori"><i class="fad fa-tag"></i></button>
-                  <button class="btn-icon" id="btn-set-pin" title="Set PIN / Ganti PIN"><i class="fad fa-lock"></i></button>
-                  <button class="btn-icon" id="btn-del-pin" title="Hapus PIN" style="display: none"><i class="fad fa-lock-open"></i></button>
-                  <button class="btn-icon" id="btn-rename-school" title="Ganti Nama Sekolah"><i class="fad fa-pencil"></i></button>
-                  <button class="btn-icon" id="btn-del-school" title="Hapus Sekolah Ini"><i class="fad fa-trash"></i></button>
-                </span>
               </div>
             </div>
 
@@ -1294,16 +1318,27 @@
               </div>
             </div>
           </div>
-          <div class="topbar-actions">
-            <a href="../index.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg></a>
-            <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
-              <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="5" />
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-              </svg>
-              <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
-              <span id="theme-label">Mode Terang</span>
-            </button>
+          <div class="topbar-action-group">
+            <div class="topbar-action" id="topbar-action-detail" style="display: none">
+              <span class="detail-actions-inline">
+                <button class="btn-icon" id="btn-category-school" title="Ubah Kategori"><i class="fa-regular fa-tag"></i></button>
+                <button class="btn-icon" id="btn-set-pin" title="Set PIN / Ganti PIN"><i class="fa-regular fa-lock"></i></button>
+                <button class="btn-icon" id="btn-del-pin" title="Hapus PIN" style="display: none"><i class="fa-regular fa-lock-open"></i></button>
+                <button class="btn-icon" id="btn-rename-school" title="Ganti Nama Sekolah"><i class="fa-regular fa-pencil"></i></button>
+                <button class="btn-icon" id="btn-del-school" title="Hapus Sekolah Ini"><i class="fa-regular fa-trash"></i></button>
+              </span>
+            </div>
+            <div class="topbar-actions">
+              <a href="../index.html" class="home-btn" title="Kembali ke Tools Hub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg></a>
+              <button class="theme-toggle" id="theme-toggle" aria-label="Ganti tema">
+                <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="5" />
+                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                </svg>
+                <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+                <span id="theme-label">Mode Terang</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1570,10 +1605,12 @@
         const subHome = document.getElementById("sub-home");
         const subDetail = document.getElementById("sub-detail");
         const subDesc = document.getElementById("sub-desc");
+        const topbarActionDetail = document.getElementById("topbar-action-detail");
         function setSubtitle(which) {
           subHome.style.display = which === "home" ? "" : "none";
           subDetail.style.display = which === "detail" ? "" : "none";
           subDesc.style.display = which === "desc" ? "" : "none";
+          topbarActionDetail.style.display = which === "detail" ? "" : "none";
         }
 
         function showHome() {
