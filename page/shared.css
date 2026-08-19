@@ -775,7 +775,7 @@ tbody tr.selected:hover {
   background: var(--card);
   color: var(--fg);
   border: 1px;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--liquid-shadow);
   font-size: 0.875rem;
   font-weight: 500;
   overflow-wrap: anywhere;
