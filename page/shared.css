@@ -68,6 +68,7 @@
 html {
   min-height: 100%;
   background: var(--bg);
+  scrollbar-gutter: stable;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -79,12 +80,11 @@ body {
   color: var(--fg);
   line-height: 1.47059;
   letter-spacing: -0.022em;
-  scrollbar-gutter: stable;
   transition:
     background 0.4s cubic-bezier(0.25, 0.1, 0.25, 1),
     color 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
   position: relative;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Ambient gradient blobs */
@@ -198,7 +198,7 @@ code {
 .container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 48px 24px;
+  padding: 48px 16px 48px 24px;
 }
 .topbar {
   display: flex;
