@@ -1417,41 +1417,38 @@
 
       <!-- VIEW 1: DAFTAR SEKOLAH -->
       <div id="view-home" class="view active">
+        <div style="display: flex; gap: 8px; margin-bottom: 16px">
+          <input type="text" id="search-school" placeholder="Cari sekolah / kegiatan..." autocomplete="off" style="flex: 1; box-sizing: border-box" />
+          <datalist id="category-list"></datalist>
+        </div>
         <div class="panel">
-          <div style="display: flex; gap: 8px; margin-bottom: 16px">
-            <input type="text" id="search-school" placeholder="Cari sekolah / kegiatan..." autocomplete="off" style="flex: 1; box-sizing: border-box" />
-            <datalist id="category-list"></datalist>
-          </div>
           <div id="school-list" class="school-list"></div>
         </div>
       </div>
 
       <!-- VIEW 2: DETAIL SEKOLAH (NOTES) -->
       <div id="view-detail" class="view">
-        <div class="panel">
-          <div style="display: flex; gap: 8px; margin-bottom: 16px">
-            <input type="text" id="search-note" placeholder="Cari catatan..." autocomplete="off" style="flex: 1; box-sizing: border-box" />
-          </div>
-
-          <div class="section-title">Daftar Catatan</div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th class="col-no">No</th>
-                  <th class="col-nama">Nama</th>
-                  <th class="col-date">Tanggal</th>
-                  <th class="col-progress">Progress</th>
-                  <th class="col-pin" title="Pin">
-                    <i class="fad fa-thumbtack"></i>
-                  </th>
-                  <th class="col-check">Selesai</th>
-                  <th class="col-del"></th>
-                </tr>
-              </thead>
-              <tbody id="note-tbody"></tbody>
-            </table>
-          </div>
+        <div style="display: flex; gap: 8px; margin-bottom: 16px">
+          <input type="text" id="search-note" placeholder="Cari catatan..." autocomplete="off" style="flex: 1; box-sizing: border-box" />
+        </div>
+        <div class="section-title">Daftar Catatan</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-no">No</th>
+                <th class="col-nama">Nama</th>
+                <th class="col-date">Tanggal</th>
+                <th class="col-progress">Progress</th>
+                <th class="col-pin" title="Pin">
+                  <i class="fad fa-thumbtack"></i>
+                </th>
+                <th class="col-check">Selesai</th>
+                <th class="col-del"></th>
+              </tr>
+            </thead>
+            <tbody id="note-tbody"></tbody>
+          </table>
         </div>
       </div>
 
