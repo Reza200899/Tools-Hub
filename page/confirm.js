@@ -163,3 +163,118 @@ function showPinModal(title, opts = {}) {
     overlay.addEventListener("click", (e) => { if (e.target === overlay) closePin(null); });
   });
 }
+
+/* showNoteEdit(name, subname) → Promise<{name, subname}|null>.
+   Modal edit nama + subname catatan. Batal/Esc → null. */
+function showNoteEdit(name = "", subname = "") {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "confirm-overlay";
+    overlay.innerHTML = `
+      <div class="prompt-box">
+        <p>Edit Nama &amp; Subname</p>
+        <label style="display:block;font-size:0.8rem;color:var(--muted);margin-bottom:4px">Nama</label>
+        <input type="text" id="edit-note-name" value="${name.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" autocomplete="off" />
+        <label style="display:block;font-size:0.8rem;color:var(--muted);margin:12px 0 4px">Subname (opsional)</label>
+        <input type="text" id="edit-note-subname" value="${subname.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" autocomplete="off" />
+        <div class="confirm-actions">
+          <button class="btn-confirm-ok">Simpan</button>
+          <button class="btn-confirm-cancel">Batal</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const nameInput = overlay.querySelector("#edit-note-name");
+    const subInput = overlay.querySelector("#edit-note-subname");
+    nameInput.focus();
+    nameInput.select();
+    const close = (val) => { if (window.closeOverlay) closeOverlay(overlay, val, resolve); else { overlay.remove(); resolve(val); } };
+    const save = () => close({ name: nameInput.value.trim(), subname: subInput.value.trim() });
+    nameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); save(); }
+      if (e.key === "Escape") close(null);
+    });
+    subInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); save(); }
+      if (e.key === "Escape") close(null);
+    });
+    overlay.querySelector(".btn-confirm-ok").onclick = save;
+    overlay.querySelector(".btn-confirm-cancel").onclick = () => close(null);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(null); });
+  });
+}
+
+/* showSchoolAdd() → Promise<{name, category}|null>. Modal tambah sekolah. */
+function showSchoolAdd() {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "confirm-overlay";
+    const cats = (window.__categories || []).map((c) => `<option value="${c.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}">`).join("");
+    overlay.innerHTML = `
+      <div class="prompt-box">
+        <p>Tambah Sekolah / Kegiatan</p>
+        <label style="display:block;font-size:0.8rem;color:var(--muted);margin-bottom:4px">Nama</label>
+        <input type="text" id="add-school-name" placeholder="Nama Sekolah/Kegiatan..." autocomplete="off" />
+        <label style="display:block;font-size:0.8rem;color:var(--muted);margin:12px 0 4px">Kategori (opsional)</label>
+        <input type="text" id="add-school-cat" placeholder="Kategori" autocomplete="off" list="add-cat-list" />
+        <datalist id="add-cat-list">${cats}</datalist>
+        <div class="confirm-actions">
+          <button class="btn-confirm-ok">Tambah</button>
+          <button class="btn-confirm-cancel">Batal</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const nameInput = overlay.querySelector("#add-school-name");
+    const catInput = overlay.querySelector("#add-school-cat");
+    nameInput.focus();
+    const close = (val) => { if (window.closeOverlay) closeOverlay(overlay, val, resolve); else { overlay.remove(); resolve(val); } };
+    const save = () => close({ name: nameInput.value.trim(), category: catInput.value.trim() });
+    nameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); save(); }
+      if (e.key === "Escape") close(null);
+    });
+    catInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); save(); }
+      if (e.key === "Escape") close(null);
+    });
+    overlay.querySelector(".btn-confirm-ok").onclick = save;
+    overlay.querySelector(".btn-confirm-cancel").onclick = () => close(null);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(null); });
+  });
+}
+
+/* showNoteAdd() → Promise<{name, subname}|null>. Modal tambah catatan. */
+function showNoteAdd() {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "confirm-overlay";
+    overlay.innerHTML = `
+      <div class="prompt-box">
+        <p>Tambah Catatan</p>
+        <label style="display:block;font-size:0.8rem;color:var(--muted);margin-bottom:4px">Nama</label>
+        <input type="text" id="add-note-name" placeholder="Nama Catatan..." autocomplete="off" />
+        <label style="display:block;font-size:0.8rem;color:var(--muted);margin:12px 0 4px">Subname (opsional)</label>
+        <input type="text" id="add-note-subname" placeholder="Subname" autocomplete="off" />
+        <div class="confirm-actions">
+          <button class="btn-confirm-ok">Tambah</button>
+          <button class="btn-confirm-cancel">Batal</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const nameInput = overlay.querySelector("#add-note-name");
+    const subInput = overlay.querySelector("#add-note-subname");
+    nameInput.focus();
+    const close = (val) => { if (window.closeOverlay) closeOverlay(overlay, val, resolve); else { overlay.remove(); resolve(val); } };
+    const save = () => close({ name: nameInput.value.trim(), subname: subInput.value.trim() });
+    nameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); save(); }
+      if (e.key === "Escape") close(null);
+    });
+    subInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); save(); }
+      if (e.key === "Escape") close(null);
+    });
+    overlay.querySelector(".btn-confirm-ok").onclick = save;
+    overlay.querySelector(".btn-confirm-cancel").onclick = () => close(null);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(null); });
+  });
+}

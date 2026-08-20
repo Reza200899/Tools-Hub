@@ -37,6 +37,9 @@
       }
       .topbar-back .btn {
         margin: 0;
+        width: 44px;
+        height: 44px;
+        font-size: 1rem;
       }
       .topbar-action {
         display: flex;
@@ -57,6 +60,14 @@
         justify-content: flex-end;
         margin-left: auto;
       }
+      /* Single-button action: wrapper bare (no pill) so hover isn't clipped. */
+      .topbar-action-single {
+        padding: 0;
+        background: none;
+        border: none;
+        box-shadow: none;
+      }
+      }
       .topbar-action-group {
         display: flex;
         align-items: center;
@@ -65,6 +76,13 @@
       }
       .topbar-action.show {
         animation: topbar-action-in 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+      }
+      /* Opt-in: matikan animasi slide-in kanan. Taruh di .topbar-action. */
+      .topbar-action.no-anim,
+      .topbar-action.no-anim.show {
+        animation: none;
+        opacity: 1;
+        transform: none;
       }
       @keyframes topbar-action-in {
         from {
@@ -93,6 +111,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        width: 44px;
+        height: 44px;
+        font-size: 1rem;
       }
       .btn-icon-only svg {
         width: 16px;
@@ -557,6 +578,17 @@
       .btn-icon.btn-del-done:hover:not(:disabled) {
         color: #fff !important;
         background: var(--red);
+      }
+      .btn-icon.btn-desc-done {
+        color: var(--green);
+      }
+      .btn-icon.btn-desc-done:hover:not(:disabled) {
+        color: #fff !important;
+        background: var(--green);
+      }
+      .btn-icon.btn-desc-done.done {
+        background: var(--green);
+        color: #fff;
       }
       .btn-icon i {
         display: inline-block;
@@ -1169,25 +1201,6 @@
         color: var(--muted);
         font-size: 0.875rem;
       }
-      .desc-name-row {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 8px;
-        margin-bottom: 12px;
-      }
-      .desc-name-row label {
-        flex-shrink: 0;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 0.875rem;
-        font-weight: 500;
-        cursor: pointer;
-        user-select: none;
-        white-space: nowrap;
-      }
-
       /* ── PIN Modal ── */
       .pin-overlay {
         position: fixed;
@@ -1355,6 +1368,8 @@
                   <span id="desc-hours" style="display: none"></span>
                   <span id="desc-dot3" style="display: none">•</span>
                   <span>Otomatis tersimpan</span>
+                  <span id="desc-subname-sep" style="display: none"> • </span>
+                  <span id="desc-subname-show" style="display: none; color: var(--muted)"></span>
                 </span>
               </div>
             </div>
@@ -1381,6 +1396,20 @@
                   <button class="btn-icon" id="btn-del-school" title="Hapus Sekolah Ini"><i class="fa-regular fa-trash"></i></button>
                 </span>
               </div>
+              <div class="topbar-action" id="topbar-action-desc-done" style="display: none">
+                <button class="btn btn-icon" id="btn-edit-note" title="Edit nama & subname"><i class="fa-regular fa-pencil"></i></button>
+                <button class="btn btn-icon btn-desc-done" id="btn-desc-done" title="Tandai selesai"><i class="fa-regular fa-circle-check"></i></button>
+              </div>
+            </div>
+            <div class="topbar-action-group">
+              <div class="topbar-action topbar-action-single no-anim" id="topbar-action-add-school">
+                <button class="btn btn-icon-only btn-liquid" id="btn-add-school" title="Tambah Sekolah"><i class="fa-regular fa-plus"></i></button>
+              </div>
+            </div>
+            <div class="topbar-action-group">
+              <div class="topbar-action topbar-action-single no-anim" id="topbar-action-add-note" style="display: none">
+                <button class="btn btn-icon-only btn-liquid" id="btn-add-note" title="Tambah Catatan"><i class="fa-regular fa-plus"></i></button>
+              </div>
             </div>
           </div>
         </div>
@@ -1389,12 +1418,10 @@
       <!-- VIEW 1: DAFTAR SEKOLAH -->
       <div id="view-home" class="view active">
         <div class="panel">
-          <form id="form-school" class="form-inline">
-            <input type="text" id="input-school" placeholder="Nama Sekolah/Kegiatan Baru..." required autocomplete="off" style="flex: 7" />
-            <input type="text" id="input-category" placeholder="Kategori (opsional)" autocomplete="off" list="category-list" style="flex: 3" />
+          <div style="display: flex; gap: 8px; margin-bottom: 16px">
+            <input type="text" id="search-school" placeholder="Cari sekolah / kegiatan..." autocomplete="off" style="flex: 1; box-sizing: border-box" />
             <datalist id="category-list"></datalist>
-            <button type="submit" class="btn btn-primary">Tambah</button>
-          </form>
+          </div>
           <div id="school-list" class="school-list"></div>
         </div>
       </div>
@@ -1402,14 +1429,9 @@
       <!-- VIEW 2: DETAIL SEKOLAH (NOTES) -->
       <div id="view-detail" class="view">
         <div class="panel">
-          <form id="form-note" class="form-inline">
-            <div style="display: flex; gap: 8px; flex: 1">
-              <input type="text" id="name" placeholder="Nama Catatan..." required autocomplete="off" style="flex: 7" />
-              <input type="text" id="subname" placeholder="Subname (opsional)" autocomplete="off" style="flex: 3" />
-            </div>
-            <button type="button" class="btn btn-ghost" id="btn-paste-form">Paste Clipboard</button>
-            <button type="submit" class="btn btn-primary">Tambah</button>
-          </form>
+          <div style="display: flex; gap: 8px; margin-bottom: 16px">
+            <input type="text" id="search-note" placeholder="Cari catatan..." autocomplete="off" style="flex: 1; box-sizing: border-box" />
+          </div>
 
           <div class="section-title">Daftar Catatan</div>
           <div class="table-wrap">
@@ -1436,19 +1458,6 @@
       <!-- VIEW 3: DESKRIPSI CATATAN -->
       <div id="view-desc" class="view">
         <div class="panel">
-          <div class="desc-name-row" style="margin-bottom: 12px">
-            <div style="font-size: 0.875rem; font-weight: 600; color: var(--muted)">Nama</div>
-            <label id="desc-done-label"
-              ><span class="cb-wrap" id="desc-done-wrap"
-                ><input type="checkbox" id="cb-desc-done" /><svg class="cb-svg" viewBox="0 0 16 16"><polyline points="3.5,8 6.5,11 12.5,5" /></svg
-              ></span>
-              Selesai</label
-            >
-          </div>
-          <div style="display: flex; gap: 8px; margin-bottom: 16px">
-            <input type="text" id="desc-note-name" style="flex: 7; box-sizing: border-box" autocomplete="off" />
-            <input type="text" id="desc-note-subname" placeholder="Subname (opsional)" style="flex: 3; box-sizing: border-box" autocomplete="off" />
-          </div>
           <div class="desc-split-layout">
             <div class="desc-split-right">
               <div style="margin-bottom: 8px; font-size: 0.875rem; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 8px">
@@ -1610,6 +1619,8 @@
           subDesc.style.display = which === "desc" ? "" : "none";
           document.getElementById("btn-back").style.display = which === "detail" ? "" : "none";
           document.getElementById("btn-back-desc").style.display = which === "desc" ? "" : "none";
+          const topbarBack = document.querySelector(".topbar-back");
+          if (topbarBack) topbarBack.style.display = (which === "detail" || which === "desc") ? "" : "none";
           topbarActionDetail.style.display = which === "detail" ? "" : "none";
           topbarActionDetail.classList.toggle("show", which === "detail");
           const topbarActionDetailDone = document.getElementById("topbar-action-detail-done");
@@ -1617,6 +1628,20 @@
           topbarActionDetailDone.classList.toggle("show", which === "detail");
           topbarActionExport.style.display = which === "home" ? "" : "none";
           topbarActionExport.classList.toggle("show", which === "home");
+          const topbarActionAddSchool = document.getElementById("topbar-action-add-school");
+          topbarActionAddSchool.style.display = which === "home" ? "" : "none";
+          topbarActionAddSchool.classList.toggle("show", which === "home");
+          const topbarActionAddNote = document.getElementById("topbar-action-add-note");
+          topbarActionAddNote.style.display = which === "detail" ? "" : "none";
+          topbarActionAddNote.classList.toggle("show", which === "detail");
+          const topbarActionDescDone = document.getElementById("topbar-action-desc-done");
+          topbarActionDescDone.style.display = which === "desc" ? "" : "none";
+          topbarActionDescDone.classList.toggle("show", which === "desc");
+          // Collapse groups that have no visible action so flex gap doesn't leave a hole.
+          document.querySelectorAll(".topbar-action-group").forEach((g) => {
+            const visible = [...g.querySelectorAll(".topbar-action")].some((a) => a.style.display !== "none");
+            g.style.display = visible ? "" : "none";
+          });
         }
 
         // Play the view transition via WAAPI so it runs every time the view
@@ -1632,6 +1657,9 @@
           currentSchoolId = null;
           currentNoteId = null;
           topbarTitle.textContent = "School Notes & To Do";
+          schoolQuery = "";
+          const sInput = document.getElementById("search-school");
+          if (sInput) sInput.value = "";
           setSubtitle("home");
           viewDetail.classList.remove("active");
           viewDesc.classList.remove("active");
@@ -1644,6 +1672,9 @@
           currentNoteId = null;
           topbarTitle.textContent = db[id].name;
           document.getElementById("btn-del-pin").style.display = db[id].pin ? "" : "none";
+          noteQuery = "";
+          const nInput = document.getElementById("search-note");
+          if (nInput) nInput.value = "";
           setSubtitle("detail");
           viewHome.classList.remove("active");
           viewDesc.classList.remove("active");
@@ -1656,8 +1687,6 @@
           currentNoteId = noteId;
           const note = db[schoolId].notes.find((n) => n.id === noteId);
           topbarTitle.textContent = note.text;
-          document.getElementById("desc-note-name").value = note.text;
-          document.getElementById("desc-note-subname").value = note.subname || "";
           descInput.value = note.desc || "";
           const doneDateEl = document.getElementById("desc-done-date");
           const dotEl = document.getElementById("desc-dot");
@@ -1687,8 +1716,12 @@
             hoursEl.style.display = "none";
             dot3El.style.display = "none";
           }
-          document.getElementById("cb-desc-done").checked = !!note.done;
-          document.getElementById("desc-done-wrap").classList.toggle("checked", !!note.done);
+          updateDescDoneBtn(note.done);
+          const subShow = document.getElementById("desc-subname-show");
+          const subSep = document.getElementById("desc-subname-sep");
+          subShow.textContent = note.subname || "";
+          subShow.style.display = note.subname ? "inline" : "none";
+          subSep.style.display = note.subname ? "inline" : "none";
           viewHome.classList.remove("active");
           viewDetail.classList.remove("active");
           activateView(viewDesc);
@@ -1699,11 +1732,24 @@
         // === Renders ===
         function renderSchools() {
           schoolList.innerHTML = "";
-          const entries = Object.keys(db)
+          let entries = Object.keys(db)
             .map((id) => ({ id, school: db[id] }))
             .sort((a, b) => (a.school.order || 0) - (b.school.order || 0));
           if (entries.length === 0) {
             schoolList.innerHTML = `<div class="empty-state" style="grid-column: 1/-1">Belum ada sekolah. Tambahkan di atas.</div>`;
+            return;
+          }
+
+          // Apply search
+          if (schoolQuery) {
+            entries = entries.filter(({ school }) =>
+              school.name.toLowerCase().includes(schoolQuery) ||
+              (school.category || "").toLowerCase().includes(schoolQuery)
+            );
+          }
+
+          if (entries.length === 0 && schoolQuery) {
+            schoolList.innerHTML = `<div class="empty-state" style="grid-column: 1/-1">Tidak ada sekolah yang cocok dengan "${escapeHtml(schoolQuery)}".</div>`;
             return;
           }
 
@@ -2056,7 +2102,13 @@
         }
 
         function renderNotes() {
-          const notes = db[currentSchoolId].notes;
+          const allNotes = db[currentSchoolId].notes;
+          const notes = noteQuery
+            ? allNotes.filter((n) =>
+                n.text.toLowerCase().includes(noteQuery) ||
+                (n.subname || "").toLowerCase().includes(noteQuery)
+              )
+            : allNotes;
           const pending = notes.filter((n) => !n.done);
           const done = notes.filter((n) => n.done);
 
@@ -2067,7 +2119,9 @@
 
           noteTbody.innerHTML = "";
           if (notes.length === 0) {
-            noteTbody.innerHTML = `<tr><td colspan="7" class="empty-state">Belum ada catatan.</td></tr>`;
+            noteTbody.innerHTML = noteQuery
+              ? `<tr><td colspan="7" class="empty-state">Tidak ada catatan yang cocok dengan "${escapeHtml(noteQuery)}".</td></tr>`
+              : `<tr><td colspan="7" class="empty-state">Belum ada catatan.</td></tr>`;
             return;
           }
 
@@ -2295,49 +2349,35 @@
         }
 
         // === Handlers ===
-        // 1. Add School
-        document.getElementById("form-school").addEventListener("submit", (e) => {
-          e.preventDefault();
-          const input = document.getElementById("input-school");
-          const catInput = document.getElementById("input-category");
-          const name = input.value.trim();
-          if (!name) return;
-          const category = catInput.value.trim();
+        // Search state
+        let schoolQuery = "";
+        let noteQuery = "";
+
+        // 1. Add School (modal)
+        document.getElementById("btn-add-school").addEventListener("click", async () => {
+          const cats = [...new Set(Object.values(db).map((s) => s.category).filter(Boolean))];
+          window.__categories = cats;
+          const res = await showSchoolAdd();
+          if (!res || !res.name) return;
           const id = generateId();
           const maxOrder = Object.values(db).reduce((m, s) => Math.max(m, s.order || 0), -1);
-          db[id] = { name, notes: [], order: maxOrder + 1, category };
+          db[id] = { name: res.name, notes: [], order: maxOrder + 1, category: res.category };
           saveData();
-          input.value = "";
-          catInput.value = "";
           renderSchools();
           showToast("Sekolah ditambahkan");
         });
 
-        // 2. Add Note
-        let isPasting = false;
-        document.getElementById("form-note").addEventListener("submit", (e) => {
-          e.preventDefault();
+        // 2. Add Note (modal)
+        document.getElementById("btn-add-note").addEventListener("click", async () => {
           if (!currentSchoolId) return;
-          const input = document.getElementById("name");
-          const subnameInput = document.getElementById("subname");
-          const text = input.value.trim();
-          if (!text) return;
-          const subname = subnameInput.value.trim();
-
-          // Cek duplikat (case-insensitive) - skip saat paste
-          if (!isPasting) {
-            const exists = db[currentSchoolId].notes.some((n) => n.text.toLowerCase() === text.toLowerCase());
-            if (exists) {
-              showToast("Catatan sudah ada!", "error");
-              return;
-            }
-          }
-          isPasting = false;
-
+          const res = await showNoteAdd();
+          if (!res || !res.name) return;
+          const exists = db[currentSchoolId].notes.some((n) => n.text.toLowerCase() === res.name.toLowerCase());
+          if (exists) { showToast("Catatan sudah ada!", "error"); return; }
           db[currentSchoolId].notes.push({
             id: generateId(),
-            text: text,
-            subname: subname,
+            text: res.name,
+            subname: res.subname,
             date: formatDate(new Date()),
             updatedAt: formatDate(new Date()),
             done: false,
@@ -2347,10 +2387,20 @@
             tasks: [],
           });
           saveData();
-          input.value = "";
-          subnameInput.value = "";
           renderNotes();
           showToast("Catatan ditambahkan");
+        });
+
+        // Search (view 1)
+        document.getElementById("search-school").addEventListener("input", (e) => {
+          schoolQuery = e.target.value.trim().toLowerCase();
+          renderSchools();
+        });
+
+        // Search (view 2)
+        document.getElementById("search-note").addEventListener("input", (e) => {
+          noteQuery = e.target.value.trim().toLowerCase();
+          renderNotes();
         });
 
         // 3. Note Actions (Done / Del / Click Row)
@@ -2583,74 +2633,48 @@
           }
         });
 
-        // 4b. Toggle Selesai dari view deskripsi
-        document.getElementById("cb-desc-done").addEventListener("change", (e) => {
+        // 4b. Toggle Selesai dari view deskripsi (tombol topbar)
+        const btnDescDone = document.getElementById("btn-desc-done");
+        function updateDescDoneBtn(done) {
+          btnDescDone.classList.toggle("done", !!done);
+          btnDescDone.title = done ? "Batalkan selesai" : "Tandai selesai";
+        }
+        btnDescDone.addEventListener("click", () => {
           if (!currentSchoolId || !currentNoteId) return;
           const note = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
           if (!note) return;
-          note.done = e.target.checked;
+          note.done = !note.done;
           note.doneDate = note.done ? formatDate(new Date()) : "";
           note.progress = note.done ? "Done" : "Pending";
           note.updatedAt = formatDate(new Date());
           saveData();
           renderNotes();
-          e.target.classList.add("cb-pop");
-          e.target.addEventListener("animationend", () => e.target.classList.remove("cb-pop"), { once: true });
-          e.target.closest(".cb-wrap").classList.toggle("checked", e.target.checked);
+          updateDescDoneBtn(note.done);
           showToast(note.done ? "Catatan selesai" : "Status dibatalkan");
         });
 
-        // 5a. Ganti Nama Catatan (auto-save)
-        document.getElementById("desc-note-name").addEventListener("input", (e) => {
+        // 4c. Edit nama & subname (modal)
+        document.getElementById("btn-edit-note").addEventListener("click", async () => {
           if (!currentSchoolId || !currentNoteId) return;
           const note = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
-          if (note) {
-            const newName = e.target.value.trim();
-            if (newName) {
-              const exists = db[currentSchoolId].notes.some((n) => n.id !== currentNoteId && n.text.toLowerCase() === newName.toLowerCase());
-              if (exists) {
-                showToast("Catatan sudah ada!", "error");
-                e.target.value = note.text;
-                return;
-              }
-              note.text = newName;
-              topbarTitle.textContent = newName;
-              note.updatedAt = formatDate(new Date());
-              saveData();
-            }
-          }
-        });
-
-        // 5a2. Ganti Subname Catatan (auto-save)
-        document.getElementById("desc-note-subname").addEventListener("input", (e) => {
-          if (!currentSchoolId || !currentNoteId) return;
-          const note = db[currentSchoolId].notes.find((n) => n.id === currentNoteId);
-          if (note) {
-            note.subname = e.target.value.trim();
-            note.updatedAt = formatDate(new Date());
-            saveData();
-            renderNotes();
-          }
-        });
-
-        // 5a3. Paste dari clipboard (form)
-        document.getElementById("btn-paste-form").addEventListener("click", async () => {
-          let text = "";
-          try {
-            text = await navigator.clipboard.readText();
-          } catch (e) {
-            return;
-          }
-          if (!text) return;
-          const data = {};
-          text.split("\n").forEach((line) => {
-            const idx = line.indexOf(":");
-            if (idx > 0) data[line.substring(0, idx).trim()] = line.substring(idx + 1).trim();
-          });
-          if (data.name) document.getElementById("name").value = data.name;
-          if (data.subname) document.getElementById("subname").value = data.subname;
-          isPasting = true;
-          document.getElementById("form-note").requestSubmit();
+          if (!note) return;
+          const res = await showNoteEdit(note.text, note.subname || "");
+          if (!res) return;
+          if (!res.name) { showToast("Nama tidak boleh kosong", "error"); return; }
+          const exists = db[currentSchoolId].notes.some((n) => n.id !== currentNoteId && n.text.toLowerCase() === res.name.toLowerCase());
+          if (exists) { showToast("Catatan sudah ada!", "error"); return; }
+          note.text = res.name;
+          note.subname = res.subname;
+          note.updatedAt = formatDate(new Date());
+          saveData();
+          topbarTitle.textContent = res.name;
+          const subShow = document.getElementById("desc-subname-show");
+          const subSep = document.getElementById("desc-subname-sep");
+          subShow.textContent = res.subname;
+          subShow.style.display = res.subname ? "inline" : "none";
+          subSep.style.display = res.subname ? "inline" : "none";
+          renderNotes();
+          showToast("Catatan diperbarui");
         });
 
         // 5. Deskripsi auto-save + auto dash

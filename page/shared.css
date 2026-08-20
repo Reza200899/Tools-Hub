@@ -1308,12 +1308,12 @@ textarea {
   line-height: 1.5;
 }
 .prompt-box input {
-  width: 100%;
+  width: 100% !important;
   max-width: 100%;
   padding: 10px 14px;
   border-radius: 30px;
-  border: 1px ;
-  /* background: var(--input); */
+  border: 1px solid transparent !important;
+  background: color-mix(in srgb, var(--bg) 92%, var(--fg)) !important;
   color: var(--fg);
   font-size: 0.9375rem;
   outline: none;
