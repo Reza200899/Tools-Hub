@@ -64,7 +64,7 @@ function showPinModal(title, opts = {}) {
     const errDefault = mode === "set" ? "PIN harus 6 digit" : "PIN salah";
 
     overlay.innerHTML = `
-      <div class="pin-box">
+      <div class="pin-box liquid-glass">
         <p>${title || label}</p>
         <div class="pin-inputs" id="pin-inputs">
           <input type="password" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">

@@ -161,6 +161,19 @@ h1 {
     background-position: 100% 50%;
   }
 }
+.topbar h1 {
+  animation: topbar-fade-left 0.6s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+}
+@keyframes topbar-fade-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 [data-theme="light"] .topbar h1,
 [data-theme="light"] .topbar h2 {
   background: linear-gradient(135deg, #1d1d1f 0%, #86868b 30%, #0071e3 60%, #7030a0 100%);
@@ -231,9 +244,9 @@ code {
   flex-shrink: 0;
   padding: 4px;
   border-radius: 38px;
-  background: var(--card);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: var(--liquid-shadow);
+  /* background: var(--card); */
+  /* border: 1px solid rgba(255, 255, 255, 0.05); */
+  /* box-shadow: var(--liquid-shadow); */
 }
 .topbar-actions .home-btn,
 .topbar-actions .theme-toggle {
@@ -854,6 +867,8 @@ tbody tr.selected:hover {
 }
 .view.active {
   display: block;
+}
+.view.active.view-anim {
   animation: apple-fade-in 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) both;
 }
 @keyframes apple-fade-in {
