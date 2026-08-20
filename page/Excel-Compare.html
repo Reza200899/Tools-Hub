@@ -148,9 +148,12 @@
 
       <!-- Upload -->
       <div id="view-upload" class="view active">
-        <div class="panel">
-          <div class="panel-header"><h2>Pilih File</h2></div>
-          <div class="drop-grid">
+        <div class="panel-group">
+          <div class="panel-title-row">
+            <div class="panel-title"><h2>Pilih File</h2></div>
+          </div>
+          <div class="panel">
+            <div class="drop-grid">
             <div class="drop-zone" id="drop-a" tabindex="0">
               <span class="icon">📄</span>
               <span class="label">File A (Original)</span>
@@ -177,6 +180,7 @@
           <div class="compare-bar">
             <button class="btn btn-primary" id="btn-compare" disabled>Compare</button>
           </div>
+          </div>
         </div>
       </div>
 
@@ -192,17 +196,20 @@
 
       <!-- Results -->
       <div id="view-result" class="view">
-        <div class="panel">
-          <div class="panel-header">
+        <div class="panel-group">
+        <div class="panel-title-row">
+          <div class="panel-title">
             <div style="display:flex;align-items:center;gap:12px">
               <button class="btn" id="btn-back">← Kembali</button>
               <h2>Hasil Perbandingan</h2>
             </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <span style="font-size:0.75rem;color:var(--muted)" id="result-info"></span>
-              <button class="btn" id="btn-export-csv">Export CSV</button>
-            </div>
           </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-size:0.75rem;color:var(--muted)" id="result-info"></span>
+            <button class="btn" id="btn-export-csv">Export CSV</button>
+          </div>
+        </div>
+        <div class="panel">
           <div class="stats-bar" id="stats-bar"></div>
           <div id="base-rekap" style="display:none">
             <div class="base-header">
@@ -236,6 +243,7 @@
               <tbody id="result-tbody"></tbody>
             </table>
           </div>
+        </div>
         </div>
       </div>
     </div>

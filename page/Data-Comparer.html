@@ -135,33 +135,35 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel-group">
         <div class="panel-title-row">
           <h2>Input Data</h2>
         </div>
-        <div class="input-grid">
-          <div class="field">
-            <div class="field-title">
-              <label for="input-1">Sumber 1 (Format: ID &lt;tab&gt; Data 1)</label>
-              <button class="btn-paste-source" data-target="input-1" type="button">Paste</button>
+        <div class="panel">
+          <div class="input-grid">
+            <div class="field">
+              <div class="field-title">
+                <label for="input-1">Sumber 1 (Format: ID &lt;tab&gt; Data 1)</label>
+                <button class="btn-paste-source" data-target="input-1" type="button">Paste</button>
+              </div>
+              <textarea id="input-1" placeholder="Contoh:&#10;csrfmiddlewaretoken&#9;D1mZW8h3kNU1kt...&#10;page_order&#9;2"></textarea>
             </div>
-            <textarea id="input-1" placeholder="Contoh:&#10;csrfmiddlewaretoken&#9;D1mZW8h3kNU1kt...&#10;page_order&#9;2"></textarea>
-          </div>
-          <div class="field">
-            <div class="field-title">
-              <label for="input-2">Sumber 2 (Format: ID Compare &lt;tab&gt; Data 2)</label>
-              <button class="btn-paste-source" data-target="input-2" type="button">Paste</button>
+            <div class="field">
+              <div class="field-title">
+                <label for="input-2">Sumber 2 (Format: ID Compare &lt;tab&gt; Data 2)</label>
+                <button class="btn-paste-source" data-target="input-2" type="button">Paste</button>
+              </div>
+              <textarea id="input-2" placeholder="Contoh:&#10;csrfmiddlewaretoken&#9;1ua5daCHEaQlR7...&#10;page_order&#9;2"></textarea>
             </div>
-            <textarea id="input-2" placeholder="Contoh:&#10;csrfmiddlewaretoken&#9;1ua5daCHEaQlR7...&#10;page_order&#9;2"></textarea>
           </div>
-        </div>
-        <div class="action-row">
-          <button id="btn-compare" class="btn-primary">Bandingkan Data</button>
-          <button id="btn-clear-inputs">Bersihkan Input</button>
+          <div class="action-row">
+            <button id="btn-compare" class="btn-primary">Bandingkan Data</button>
+            <button id="btn-clear-inputs">Bersihkan Input</button>
+          </div>
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel-group">
         <div class="panel-title-row">
           <h2>Hasil Perbandingan</h2>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -170,7 +172,7 @@
             <button id="btn-csv">Download CSV</button>
           </div>
         </div>
-
+        <div class="panel">
         <div class="filter-row">
           <div class="search-wrap">
             <input type="text" id="search-input" placeholder="Cari ID atau Data…" />
@@ -206,6 +208,7 @@
         <div style="margin-top:8px;font-size:0.75rem;color:var(--muted)">
           Tampil <span id="row-count">0</span> baris
         </div>
+      </div>
       </div>
     </div>
 

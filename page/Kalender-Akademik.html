@@ -29,12 +29,15 @@
       @media (min-width: 900px) {
         .main-grid {
           display: grid;
-          grid-template-columns: 400px 1fr;
+          grid-template-columns: 400px minmax(0, 1fr);
           gap: 20px;
           align-items: start;
         }
         .left-col {
           margin-bottom: 0;
+        }
+        .right-col {
+          min-width: 0;
         }
       }
 
@@ -300,15 +303,16 @@
       <div class="main-grid">
         <div class="left-col">
           <!-- Bulk Add Panel -->
-          <div class="panel">
-            <div class="panel-header">
+          <div class="panel-group">
+            <div class="panel-title-row">
               <div class="panel-title">
                 <h2>Tambah Bulk</h2>
                 <p>Paste tanggal &amp; nama kegiatan, pilih bulan &amp; tahun.</p>
               </div>
             </div>
-            <div class="form-row">
-              <div>
+            <div class="panel">
+              <div class="form-row">
+                <div>
                 <label for="bulk-month">Bulan</label>
                 <select id="bulk-month">
                   <option value="1">Januari</option>
@@ -345,10 +349,15 @@
         </div>
         <!-- /left-col -->
 
-        <div class="right-col">
+        
+        <!-- /right-col -->
+      </div>
+      <!-- /main-grid -->
+	  
+	  <div class="right-col">
           <!-- Event Table -->
-          <div class="panel">
-            <div class="panel-header">
+          <div class="panel-group">
+            <div class="panel-title-row">
               <div class="panel-title">
                 <h2>Daftar Event</h2>
                 <p id="table-subtitle"></p>
@@ -365,7 +374,8 @@
                 <input type="file" id="import-file-input" accept=".csv,.xlsx,.xls" style="display:none" />
               </div>
             </div>
-            <div style="position: relative; margin-bottom: 8px">
+            <div class="panel">
+              <div style="position: relative; margin-bottom: 8px">
               <input type="text" id="event-search" placeholder="Cari event..." style="padding-left: 32px" />
               <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--muted); pointer-events: none"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             </div>
@@ -388,12 +398,11 @@
             </div>
             <div class="summary-row" id="summary-row"></div>
           </div>
+          </div>
         </div>
-        <!-- /right-col -->
-      </div>
-      <!-- /main-grid -->
-
-      <footer class="note">
+    </div>
+	
+	<footer class="note">
         <p>Catatan</p>
         <ul>
           <li><strong>Bulk:</strong> Paste tanggal + nama kegiatan (satu baris per event), pilih bulan &amp; tahun, lalu klik Tambahkan.</li>
@@ -401,7 +410,6 @@
           <li>Gunakan tombol Export untuk mengunduh dalam format CSV atau XLSX.</li>
         </ul>
       </footer>
-    </div>
 
     <!-- Preview Modal -->
     <div class="modal-overlay" id="bulk-preview-modal" style="display: none">
@@ -1190,6 +1198,7 @@
         window.addEventListener("resize", applyLayout);
       })();
     </script>
+    </div>
       <script src="../theme-splash.js"></script>
   <script src="../navbar.js"></script>
   </body>

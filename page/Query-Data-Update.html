@@ -47,8 +47,8 @@
       </div>
 
       <div class="grid">
-        <div class="panel" id="profile-panel"></div>
-        <div class="panel" id="student-panel"></div>
+        <div class="panel-group"><div class="panel" id="profile-panel"></div></div>
+        <div class="panel-group"><div class="panel" id="student-panel"></div></div>
       </div>
 
       <footer class="note">
@@ -375,7 +375,7 @@
           <p class="panel-meta"><span class="count">0</span> dipilih dari ${fields.length}<span class="warning-inline hidden" role="alert"></span></p>
         </div>
       `;
-        container.appendChild(header);
+        container.parentNode.insertBefore(header, container);
 
         const searchWrap = document.createElement("div");
         searchWrap.className = "search-wrap";

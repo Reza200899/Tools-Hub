@@ -105,19 +105,20 @@
       <div class="main-grid">
         <div class="left-col">
           <!-- Input Panel -->
-          <div class="panel">
-            <div class="panel-header">
+          <div class="panel-group">
+            <div class="panel-title-row">
               <div class="panel-title">
                 <h2>Tambah Kelas</h2>
                 <p>Input manual atau paste block format (nama kelas + subject, dipisah blank line).</p>
               </div>
             </div>
-            <div class="form-row">
-              <div>
-                <label for="class-name">Nama Kelas</label>
-                <input type="text" id="class-name" placeholder="Contoh: 10A, 11B..." />
+            <div class="panel">
+              <div class="form-row">
+                <div>
+                  <label for="class-name">Nama Kelas</label>
+                  <input type="text" id="class-name" placeholder="Contoh: 10A, 11B..." />
+                </div>
               </div>
-            </div>
             <label for="class-subjects">Subject (satu per baris)</label>
             <textarea id="class-subjects" placeholder="10A	11B&#10;Mathematics	Physics&#10;English	Chemistry"></textarea>
             <p class="hint">Paste langsung — baris 1 = nama kelas (tab), baris berikutnya = subject per kelas (tab).</p>
@@ -142,8 +143,8 @@
 
         <div class="right-col">
           <!-- Compare Table -->
-          <div class="panel">
-            <div class="panel-header">
+          <div class="panel-group">
+            <div class="panel-title-row">
               <div class="panel-title">
                 <h2>Hasil Perbandingan</h2>
                 <p id="table-subtitle"></p>
@@ -152,13 +153,15 @@
                 <button id="btn-copy-all">Salin Semua</button>
               </div>
             </div>
-            <div class="table-wrap">
-              <table>
-                <thead id="compare-thead"></thead>
-                <tbody id="compare-tbody"></tbody>
-              </table>
+            <div class="panel">
+              <div class="table-wrap">
+                <table>
+                  <thead id="compare-thead"></thead>
+                  <tbody id="compare-tbody"></tbody>
+                </table>
+              </div>
+              <div class="summary-row" id="summary-row"></div>
             </div>
-            <div class="summary-row" id="summary-row"></div>
           </div>
         </div>
       </div>
@@ -544,6 +547,7 @@
         renderCompare([]);
       })();
     </script>
+    </div>
       <script src="../theme-splash.js"></script>
   </body>
 </html>

@@ -259,27 +259,31 @@
       </div>
 
       <!-- Output -->
-      <div class="panel" id="panel-output" style="display:none">
-        <div class="panel-header">
-          <h2>Hasil Ekstraksi</h2>
+      <div class="panel-group">
+        <div class="panel-title-row">
+          <div class="panel-title"><h2>Hasil Ekstraksi</h2></div>
           <div class="btn-group">
             <button class="btn" id="btn-copy" title="Salin ke clipboard">📋 Copy</button>
             <button class="btn" id="btn-download" title="Download .txt">⬇ Download</button>
           </div>
         </div>
-        <textarea class="output-area" id="output-area" placeholder="Teks hasil OCR akan muncul di sini..." spellcheck="false"></textarea>
-        <div class="char-count" id="char-count"></div>
+        <div class="panel" id="panel-output" style="display:none">
+          <textarea class="output-area" id="output-area" placeholder="Teks hasil OCR akan muncul di sini..." spellcheck="false"></textarea>
+          <div class="char-count" id="char-count"></div>
+        </div>
       </div>
 
       <!-- Font Analysis -->
-      <div class="panel" id="panel-font" style="display:none">
-        <div class="panel-header">
-          <h2>Analisis Font</h2>
+      <div class="panel-group">
+        <div class="panel-title-row">
+          <div class="panel-title"><h2>Analisis Font</h2></div>
         </div>
-        <div class="font-grid" id="font-grid"></div>
-        <div id="font-suggestions" style="margin-top:16px;display:none">
-          <div class="font-card-label" style="margin-bottom:8px">Kemungkinan Font</div>
-          <div class="font-chips" id="font-chips"></div>
+        <div class="panel" id="panel-font" style="display:none">
+          <div class="font-grid" id="font-grid"></div>
+          <div id="font-suggestions" style="margin-top:16px;display:none">
+            <div class="font-card-label" style="margin-bottom:8px">Kemungkinan Font</div>
+            <div class="font-chips" id="font-chips"></div>
+          </div>
         </div>
       </div>
 

@@ -189,11 +189,12 @@
       </div>
 
       <!-- Settings + Bulk Input -->
-      <div class="panel">
+      <div class="panel-group">
         <div class="panel-title-row">
           <h2>Pengaturan</h2>
         </div>
-        <div class="settings-row">
+        <div class="panel">
+          <div class="settings-row">
           <div class="field field-prefix">
             <label for="prefix-input">Username Awal / Prefix</label>
             <input type="text" id="prefix-input" placeholder="sbm" />
@@ -219,10 +220,11 @@
             <button id="btn-process-bulk" class="btn-primary">Proses</button>
           </div>
         </div>
+        </div>
       </div>
 
       <!-- Table -->
-      <div class="panel">
+      <div class="panel-group">
         <div class="panel-title-row">
           <h2>Data</h2>
           <div style="display: flex; gap: 8px; flex-wrap: wrap">
@@ -233,7 +235,8 @@
             <button id="btn-clear-all">Hapus Semua</button>
           </div>
         </div>
-        <div class="search-wrap">
+        <div class="panel">
+          <div class="search-wrap">
           <input type="text" id="search-input" placeholder="Cari nama / username / email…" />
           <button class="search-clear" id="search-clear" type="button" aria-label="Hapus pencarian">
             <i class="fad fa-xmark"></i>
@@ -257,6 +260,7 @@
             </thead>
             <tbody id="tbody"></tbody>
           </table>
+        </div>
         </div>
         <div style="margin-top: 8px; font-size: 0.75rem; color: var(--muted)"><span id="row-count">0</span> baris</div>
       </div>

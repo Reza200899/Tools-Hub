@@ -385,8 +385,8 @@
 
       <!-- Input + Import Panels -->
       <div class="two-col">
-        <div class="panel">
-          <div class="panel-header">
+        <div class="panel-group">
+          <div class="panel-title-row">
             <div class="panel-title">
               <h2>1. Input Nama</h2>
               <p>Paste nama, satu per baris.</p>
@@ -395,12 +395,14 @@
               <button id="btn-clear">Bersihkan</button>
             </div>
           </div>
-          <textarea id="input-names" placeholder="Agus Hariono&#10;Siti Nurhaliza&#10;Budi Santoso&#10;Dewi Lestari"></textarea>
-          <p class="format-hint">Satu nama per baris. Baris kosong otomatis diabaikan.</p>
+          <div class="panel">
+            <textarea id="input-names" placeholder="Agus Hariono&#10;Siti Nurhaliza&#10;Budi Santoso&#10;Dewi Lestari"></textarea>
+            <p class="format-hint">Satu nama per baris. Baris kosong otomatis diabaikan.</p>
+          </div>
         </div>
 
-        <div class="panel">
-          <div class="panel-header" style="margin-bottom: 0">
+        <div class="panel-group">
+          <div class="panel-title-row" style="margin-bottom: 0">
             <div class="panel-title">
               <h2>2. Import Data Referensi</h2>
               <p>Import file Excel/CSV atau paste data langsung.</p>
@@ -410,7 +412,8 @@
               <button class="import-mode-btn" data-import-mode="paste">Paste Text</button>
             </div>
           </div>
-          <div id="import-body">
+          <div class="panel">
+            <div id="import-body">
             <div id="import-mode-paste" style="display: none">
               <textarea id="import-textarea" placeholder="Nama&#9;Username&#10;Agus Hariono&#9;agus123&#10;Siti Nurhaliza&#9;siti456&#10;Budi Santoso&#9;budi789" style="min-height: 150px"></textarea>
               <p class="format-hint">Paste data dengan tab sebagai pemisah kolom (Nama&#9;Username). Baris kosong diabaikan.</p>
@@ -425,8 +428,8 @@
       </div>
 
       <!-- Match Panel -->
-      <div class="panel" id="match-panel" style="display: none">
-        <div class="panel-header">
+      <div class="panel-group">
+        <div class="panel-title-row" id="match-panel-title" style="display: none">
           <div class="panel-title">
             <h2>3. Hasil Match</h2>
             <p id="match-subtitle"></p>
@@ -437,7 +440,8 @@
             <button id="btn-export" class="btn-success" disabled>Export Hasil</button>
           </div>
         </div>
-        <div class="search-bar">
+        <div class="panel" id="match-panel" style="display: none">
+          <div class="search-bar">
           <input type="text" id="search-input" placeholder="Cari nama input..." />
           <select id="status-filter">
             <option value="">Semua</option>
@@ -464,6 +468,7 @@
           </table>
         </div>
         <div class="summary-row" id="summary-row"></div>
+      </div>
       </div>
     </div>
 
@@ -623,6 +628,7 @@
           inputNames = [];
           matches = [];
           document.getElementById("match-panel").style.display = "none";
+          document.getElementById("match-panel-title").style.display = "none";
         });
 
         /* ──  Import file    ── */
@@ -735,6 +741,7 @@
         function renderMatchTable() {
           const panel = document.getElementById("match-panel");
           panel.style.display = "block";
+          document.getElementById("match-panel-title").style.display = "flex";
 
           // Toggle username column visibility
           const thUsername = panel.querySelector(".th-username");
@@ -1030,6 +1037,7 @@
         }
       })();
     </script>
+    </div>
       <script src="../theme-splash.js"></script>
   <script src="../navbar.js"></script>
   </body>
