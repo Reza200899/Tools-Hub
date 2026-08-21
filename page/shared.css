@@ -225,7 +225,16 @@ code {
   justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 32px;
+  margin-bottom: 28px !important;
+  /* ── macOS 26 liquid-glass sticky ── */
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin-top: -48px;
+  padding: 24px 0 12px;
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
 }
 .topbar > .d-flex,
 .topbar-row {
@@ -258,6 +267,11 @@ code {
 @media (max-width: 1048px) {
   .topbar-row {
     flex-wrap: nowrap;
+  }
+  .topbar {
+    padding-top: 1px;
+    margin-bottom: 0px !important;
+    padding-left: 40px;
   }
 }
 
@@ -1679,7 +1693,7 @@ textarea {
   }
   body:has(#navbar) .container {
     margin-left: 0;
-    padding-top: 70px;
+    padding-top: 58px;
   }
   .navbar.open ~ .container {
     margin-left: 220px;
